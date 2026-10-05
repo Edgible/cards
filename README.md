@@ -45,7 +45,7 @@ That writes `card-light.svg` and `card-dark.svg` beside `card.yml`. If a `what` 
 https://raw.githubusercontent.com/Edgible/cards/main/cards/desk/docker-compose.yml
 ```
 
-A script that applies this card's `changes` is optional. The `changes` list in `card.yml` stays the description of the edits. The script is a way to apply that list. Put it in the same directory as `card.yml`. In `README.md`, say what it does, the command to run it, and what the person running it must supply, such as an org label. Leave device names, hostnames, organization ids, and passwords out of the script. `tools/` is for scripts that work on any card. A card with no script is still complete.
+A script that applies this card's `changes` is optional. The `changes` list in `card.yml` stays the description of the edits. The script is a way to apply that list. Name it `tailor.sh` and put it in the same directory as `card.yml`. In `README.md`, say what it does, the command to run it, and what the person running it must supply, such as an org label. Leave device names, hostnames, organization ids, and passwords out of the script. `tools/` is for scripts that work on any card. A card with no script is still complete.
 
 Check the file. This needs the `pyyaml` and `jsonschema` packages.
 
