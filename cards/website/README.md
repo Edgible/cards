@@ -1,6 +1,6 @@
 # website
 
-A public site, an open analytics script, a locked analytics dashboard, and a locked uptime monitor.
+A site, the count of who read it, and a check that it is still up are usually three services someone else runs. This card keeps all three on machines you own. Strangers can open the site and the tracking script. The dashboard and the monitor ask for an org login.
 
 `site` is nginx serving your files, open to anyone. `analytics` is the Umami tracking script, also open. `umami` is that same process with its dashboard behind an org login, and it needs Postgres. Those three share the place `web`, so they run on one serving device. `status` is Uptime Kuma behind an org login, on the place `monitor`, which can be a second serving device. A monitor on the same machine as the site cannot report that machine going down.
 

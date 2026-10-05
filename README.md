@@ -31,7 +31,7 @@ mkdir -p cards/desk
 
 Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data.
 
-Write `cards/desk/README.md` in your own words: what problem this pattern solves, and anything a person should know before they run it. Leave the same details out of that file. The schema does not check it.
+Start `cards/desk/README.md` with the problem this card solves, in your own words. Then say anything a person should know before they run it. Leave device names, hostnames, organization ids, and passwords out of that file. The schema does not check it.
 
 A picture is optional and is not part of the schema. Draw it from the card:
 
