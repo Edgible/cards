@@ -2,35 +2,35 @@
 
 Edgible Cards
 
-Each directory that contains `card.yml` is one card. [tools/card.schema.json](tools/card.schema.json) is the source of truth for that file. [tools/card-to-stack.py](tools/card-to-stack.py) writes a stack file from a card.
+`cards/` holds the patterns. `tools/` holds the schema and the scripts. A directory under `cards/` that contains `card.yml` is one card. [tools/card.schema.json](tools/card.schema.json) is the source of truth for that file. [tools/card-to-stack.py](tools/card-to-stack.py) writes a stack file from a card.
 
-- [website](website/card.yml)
-- [n8n](n8n/card.yml)
+- [website](cards/website/card.yml)
+- [n8n](cards/n8n/card.yml)
 
 ## Publish a card
 
 A card is published when a maintainer merges a pull request into `main`. Push the branch to your fork. Do not push to `main` on this repo.
 
-The directory name is the pattern name, and it is unique. `website/card.yml` is the website card. `metadata.name` is that same string.
+The directory name under `cards/` is the pattern name, and it is unique. `cards/website/card.yml` is the website card. `metadata.name` is `website`.
 
 Check the name before you add a directory:
 
 ```bash
-gh api repos/Edgible/cards/contents/n8n --jq .name
+gh api repos/Edgible/cards/contents/cards/n8n --jq .name
 ```
 
-A 404 means `n8n/` is free. A result means that name is taken. Edit the card that is already there, or pick a name that says how yours differs, such as `n8n-sqlite`.
+A 404 means `cards/n8n/` is free. A result means that name is taken. Edit the card that is already there, or pick a name that says how yours differs, such as `n8n-sqlite`.
 
 The commands below use `desk` for a name that is free. On your fork:
 
 ```bash
-mkdir desk
+mkdir -p cards/desk
 ```
 
-Write `desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
+Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
 
 ```
-https://raw.githubusercontent.com/Edgible/cards/main/desk/docker-compose.yml
+https://raw.githubusercontent.com/Edgible/cards/main/cards/desk/docker-compose.yml
 ```
 
 Check the file. This needs the `pyyaml` and `jsonschema` packages.
@@ -48,7 +48,7 @@ if card["metadata"]["name"] != path.parent.name:
     sys.exit("metadata.name must match the directory name")
 Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER).validate(card)
 print("ok")
-' desk/card.yml
+' cards/desk/card.yml
 ```
 
 `ok` means the file matches the schema and the directory name. Open a pull request. A maintainer merges it onto `main`. That merge is the publish. An update to a card that already exists is a pull request that changes that `card.yml`, and a maintainer decides whether the change belongs there.
