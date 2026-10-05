@@ -1,6 +1,6 @@
 # tools
 
-These files are the machinery for a card. A directory under `cards/` is a pattern. Nothing in here is a card.
+These files are the machinery for any card. A directory under `cards/` is one card. Nothing in here is a card. A script that applies one card's `changes` belongs in that card's directory, and the command belongs in that card's README.
 
 ## card.schema.json
 
