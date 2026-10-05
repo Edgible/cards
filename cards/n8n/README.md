@@ -2,7 +2,7 @@
 
 One n8n process, published twice. The editor is behind an org login. The webhook hostname is open, because GitHub, Stripe, and `curl` cannot complete a browser login.
 
-Both apps are the place `workhorse`, so they stay on one serving device. They share port `5678`. The card starts from the Compose file n8n publishes, which runs Postgres and a task runner. [tailor.sh](tailor.sh) applies the edits on the card. The script does not contain an org label, a hostname, or a password.
+Both apps are the place `workhorse`, so they stay on one serving device. They share port `5678`. The card starts from the Compose file n8n publishes, which runs Postgres and a task runner. [tailor.sh](tailor.sh) applies the edits on the card. The script does not contain an org label, a hostname, or a password. It exits if an expected edit is not in the file afterwards. Running it again is safe.
 
 The org label is the part of a hostname you already have between the first dot and `.edgible.com`. One published app is enough to read it. On the machine that will run the container:
 

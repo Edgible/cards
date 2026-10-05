@@ -20,6 +20,6 @@ curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/website/ta
 bash ~/website-tailor.sh
 ```
 
-The script writes `~/umami/.env` when that file is missing. It does not store the generated values. Other directories are `bash ~/website-tailor.sh ~/umami ~/uptime-kuma`.
+The script writes `~/umami/.env` when that file is missing. It does not store the generated values. It exits if an expected edit is not in the file afterwards. Running it again is safe. Other directories are `bash ~/website-tailor.sh ~/umami ~/uptime-kuma`.
 
 The card is [card.yml](card.yml).
