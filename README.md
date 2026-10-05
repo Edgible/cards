@@ -6,3 +6,49 @@ Each directory that contains `card.yml` is one card. [tools/card.schema.json](to
 
 - [website](website/card.yml)
 - [n8n](n8n/card.yml)
+
+## Publish a card
+
+A card is published when a maintainer merges a pull request into `main`. Push the branch to your fork. Do not push to `main` on this repo.
+
+The directory name is the pattern name, and it is unique. `website/card.yml` is the website card. `metadata.name` is that same string.
+
+Check the name before you add a directory:
+
+```bash
+gh api repos/Edgible/cards/contents/n8n --jq .name
+```
+
+A 404 means `n8n/` is free. A result means that name is taken. Edit the card that is already there, or pick a name that says how yours differs, such as `n8n-sqlite`.
+
+The commands below use `desk` for a name that is free. On your fork:
+
+```bash
+mkdir desk
+```
+
+Write `desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
+
+```
+https://raw.githubusercontent.com/Edgible/cards/main/desk/docker-compose.yml
+```
+
+Check the file. This needs the `pyyaml` and `jsonschema` packages.
+
+```bash
+python3 -c '
+import json, sys
+from pathlib import Path
+import yaml
+from jsonschema import Draft202012Validator
+path = Path(sys.argv[1])
+schema = json.loads(Path("tools/card.schema.json").read_text())
+card = yaml.safe_load(path.read_text())
+if card["metadata"]["name"] != path.parent.name:
+    sys.exit("metadata.name must match the directory name")
+Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER).validate(card)
+print("ok")
+' desk/card.yml
+```
+
+`ok` means the file matches the schema and the directory name. Open a pull request. A maintainer merges it onto `main`. That merge is the publish. An update to a card that already exists is a pull request that changes that `card.yml`, and a maintainer decides whether the change belongs there.
