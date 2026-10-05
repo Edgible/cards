@@ -47,22 +47,10 @@ https://raw.githubusercontent.com/Edgible/cards/main/cards/desk/docker-compose.y
 
 A script that applies this card's `changes` is optional. The `changes` list in `card.yml` stays the description of the edits. The script is a way to apply that list. Name it `tailor.sh` and put it in the same directory as `card.yml`. In `README.md`, say what it does, the command to run it, and what the person running it must supply, such as an org label. Leave device names, hostnames, organization ids, and passwords out of the script. `tools/` is for scripts that work on any card. A card with no script is still complete.
 
-Check the file. This needs the `pyyaml` and `jsonschema` packages.
+Check the file. This needs the `pyyaml` and `jsonschema` packages. The same check runs on the pull request.
 
 ```bash
-python3 -c '
-import json, sys
-from pathlib import Path
-import yaml
-from jsonschema import Draft202012Validator
-path = Path(sys.argv[1])
-schema = json.loads(Path("tools/card.schema.json").read_text())
-card = yaml.safe_load(path.read_text())
-if card["metadata"]["name"] != path.parent.name:
-    sys.exit("metadata.name must match the directory name")
-Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER).validate(card)
-print("ok")
-' cards/desk/card.yml
+python3 tools/check-cards.py cards/desk/card.yml
 ```
 
 `ok` means the file matches the schema and the directory name. Open a pull request. A maintainer merges it onto `main`. That merge is the publish. An update to a card that already exists is a pull request that changes that `card.yml`, and a maintainer decides whether the change belongs there.

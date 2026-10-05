@@ -8,6 +8,14 @@ The source of truth for `card.yml`. A card matches this schema or it does not. I
 
 Check a file from the repo root. This needs the `pyyaml` and `jsonschema` packages. The command is in the [publish section](../README.md#publish-a-card).
 
+## check-cards.py
+
+Runs that check. With no arguments it checks every `cards/<name>/card.yml`. `metadata.name` must match the directory name. The pull request workflow runs this command. A failing check means the card does not match the schema.
+
+```bash
+python3 tools/check-cards.py
+```
+
 ## card-to-stack.py
 
 Writes a stack file that `edgible stack deploy` accepts. You pass the card and the serving device. The script fills in that device name and the organization id from `edgible config get organizationId`. Auth mode `org` on the card is written `edgible-login` in the stack file.
