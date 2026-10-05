@@ -27,7 +27,7 @@ The commands below use `desk` for a name that is free. On your fork:
 mkdir -p cards/desk
 ```
 
-Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
+Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data. A picture is optional and is not part of the schema. When you have one, put it beside `card.yml` as `card-light.svg`. The dark pair is `card-dark.svg`. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
 
 ```
 https://raw.githubusercontent.com/Edgible/cards/main/cards/desk/docker-compose.yml
