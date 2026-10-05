@@ -15,9 +15,9 @@ applications:
     authModes: [none]
     place: web
     resources:
-      compose: https://guides.edgible.com/guides/self-hosting-is-social/compose/site/docker-compose.yml
+      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/docker-compose.yml
       files:
-        - https://guides.edgible.com/guides/self-hosting-is-social/compose/site/public/index.html
+        - https://raw.githubusercontent.com/Edgible/cards/main/cards/website/public/index.html
 
   - name: analytics
     what: Umami tracking script, same process as umami

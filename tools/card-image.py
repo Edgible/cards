@@ -149,7 +149,11 @@ def alt_text(card_name: str, groups: list[tuple[str, list[tuple]]], subtitles: d
         for app_name, port, auth, what in rows:
             sentences.append(f"{app_name} is {what} on port {port}, {AUTH_LABEL[auth]}.")
         if place:
-            bits.append(f"Place {place} is {subtitles[place]}: " + " ".join(sentences))
+            lead = subtitles[place]
+            if lead.startswith("may "):
+                bits.append(f"Place {place} {lead}: " + " ".join(sentences))
+            else:
+                bits.append(f"Place {place} is {lead}: " + " ".join(sentences))
         else:
             bits.append(" ".join(sentences))
     bits.append("The card names no device and no organization.")
