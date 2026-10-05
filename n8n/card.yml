@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: n8n
+  description: Locked editor and open webhook hostname, one n8n process
+
+applications:
+  - name: n8n
+    what: n8n editor
+    from: docker.n8n.io/n8nio/n8n
+    database: postgres:18
+    port: 5678
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [org]
+    place: workhorse
+    resources:
+      compose: https://raw.githubusercontent.com/n8n-io/n8n-hosting/main/docker-compose/withPostgres/docker-compose.yml
+      files:
+        - https://raw.githubusercontent.com/n8n-io/n8n-hosting/main/docker-compose/withPostgres/.env
+        - https://raw.githubusercontent.com/n8n-io/n8n-hosting/main/docker-compose/withPostgres/init-data.sh
+      changes:
+        - Bind the host port to 127.0.0.1 only
+        - Replace the sample database passwords and RUNNERS_AUTH_TOKEN with generated values
+        - Set N8N_PROXY_HOPS to 1 and N8N_PROTOCOL to https
+        - Set N8N_HOST and N8N_EDITOR_BASE_URL to the hostname of this app
+        - Set WEBHOOK_URL to the hostname of n8n-hooks
+      env: [POSTGRES_PASSWORD, POSTGRES_NON_ROOT_PASSWORD, RUNNERS_AUTH_TOKEN]
+
+  - name: n8n-hooks
+    what: n8n webhooks, same process as n8n
+    from: docker.n8n.io/n8nio/n8n
+    port: 5678
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [none]
+    place: workhorse
+    resources:
+      compose: https://raw.githubusercontent.com/n8n-io/n8n-hosting/main/docker-compose/withPostgres/docker-compose.yml
+      files:
+        - https://raw.githubusercontent.com/n8n-io/n8n-hosting/main/docker-compose/withPostgres/.env
+        - https://raw.githubusercontent.com/n8n-io/n8n-hosting/main/docker-compose/withPostgres/init-data.sh
+      changes:
+        - Bind the host port to 127.0.0.1 only
+        - Replace the sample database passwords and RUNNERS_AUTH_TOKEN with generated values
+        - Set N8N_PROXY_HOPS to 1 and N8N_PROTOCOL to https
+        - Set N8N_HOST and N8N_EDITOR_BASE_URL to the hostname of this app
+        - Set WEBHOOK_URL to the hostname of n8n-hooks
+      env: [POSTGRES_PASSWORD, POSTGRES_NON_ROOT_PASSWORD, RUNNERS_AUTH_TOKEN]
