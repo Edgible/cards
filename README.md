@@ -2,10 +2,12 @@
 
 Edgible Cards
 
-`cards/` holds the patterns. `tools/` holds the schema and the scripts. A directory under `cards/` that contains `card.yml` is one card. [tools/card.schema.json](tools/card.schema.json) is the source of truth for that file. [tools/card-to-stack.py](tools/card-to-stack.py) writes a stack file from a card.
+`cards/` holds the patterns. `tools/` holds the schema and the scripts. A directory under `cards/` that contains `card.yml` is one card. [tools/card.schema.json](tools/card.schema.json) is the source of truth for that file. [tools/card-to-stack.py](tools/card-to-stack.py) writes a stack file from a card. [tools/card-image.py](tools/card-image.py) writes `card-light.svg` and `card-dark.svg` from the same file.
 
-- [website](cards/website/card.yml)
-- [n8n](cards/n8n/card.yml)
+- [website](cards/website/README.md)
+- [n8n](cards/n8n/README.md)
+
+What each file in `tools/` does is [tools/README.md](tools/README.md).
 
 ## Publish a card
 
@@ -27,7 +29,17 @@ The commands below use `desk` for a name that is free. On your fork:
 mkdir -p cards/desk
 ```
 
-Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data. A picture is optional and is not part of the schema. When you have one, put it beside `card.yml` as `card-light.svg`. The dark pair is `card-dark.svg`. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
+Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data.
+
+Write `cards/desk/README.md` in your own words: what problem this pattern solves, and anything a person should know before they run it. Leave the same details out of that file. The schema does not check it.
+
+A picture is optional and is not part of the schema. Draw it from the card:
+
+```bash
+python3 tools/card-image.py cards/desk
+```
+
+That writes `card-light.svg` and `card-dark.svg` beside `card.yml`. If a `what` line does not fit, shorten it and run the command again. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
 
 ```
 https://raw.githubusercontent.com/Edgible/cards/main/cards/desk/docker-compose.yml
