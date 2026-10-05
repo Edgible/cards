@@ -31,7 +31,7 @@ mkdir -p cards/desk
 
 Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data.
 
-Start `cards/desk/README.md` with the problem this card solves, in your own words. Then say anything a person should know before they run it. Leave device names, hostnames, organization ids, and passwords out of that file. The schema does not check it.
+Write `cards/desk/README.md` with three headings: Why, What, and How. Why is the problem this card solves. What is the apps and the places. How is how to fetch the files and run `tailor.sh` when the card has one. Leave device names, hostnames, organization ids, and passwords out of that file. The schema does not check it.
 
 A picture is optional and is not part of the schema. Draw it from the card:
 

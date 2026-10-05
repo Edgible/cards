@@ -1,12 +1,18 @@
 # website
 
+## Why
+
 A site, the count of who read it, and a check that it is still up are usually three services someone else runs. This card keeps all three on machines you own. Strangers can open the site and the tracking script. The dashboard and the monitor ask for an org login.
+
+## What
 
 `site` is nginx serving your files, open to anyone. `analytics` is the Umami tracking script, also open. `umami` is that same process with its dashboard behind an org login, and it needs Postgres. Those three share the place `web`, so they run on one serving device. `status` is Uptime Kuma behind an org login, on the place `monitor`, which can be a second serving device. A monitor on the same machine as the site cannot report that machine going down.
 
-Umami and Uptime Kuma start from the Compose files those projects publish. The card lists the edits. [tailor.sh](tailor.sh) applies that list. The site has no upstream Compose file, so `docker-compose.yml` and the sample `public/index.html` sit next to this card. An existing `~/site/public/index.html` is left as it is.
+Umami and Uptime Kuma start from the Compose files those projects publish. The site has no upstream Compose file, so `docker-compose.yml` and the sample `public/index.html` sit next to this card. The card is [card.yml](card.yml).
 
-On the machine that will run the containers:
+## How
+
+The card lists the edits. [tailor.sh](tailor.sh) applies that list. An existing `~/site/public/index.html` is left as it is. On the machine that will run the containers:
 
 ```bash
 mkdir -p ~/site/public ~/umami ~/uptime-kuma
@@ -21,5 +27,3 @@ bash ~/website-tailor.sh
 ```
 
 The script writes `~/umami/.env` when that file is missing. It does not store the generated values. It exits if an expected edit is not in the file afterwards. Running it again is safe. Other directories are `bash ~/website-tailor.sh ~/umami ~/uptime-kuma`.
-
-The card is [card.yml](card.yml).
