@@ -30,7 +30,7 @@ One device name applies to every app. `--device web=minipc --device monitor=othe
 
 ## card-image.py
 
-Writes `card-light.svg` and `card-dark.svg` next to a `card.yml`. The picture lists the apps, ports, auth modes, and places. It draws no caller, no hostname, and no machine. The words come from the card. If a `what` line does not fit the row, the command fails and you shorten that line.
+Writes `images/card-light.svg` and `images/card-dark.svg` for a card. The picture lists the apps, ports, auth modes, and places. It draws no caller, no hostname, and no machine. The words come from the card. If a `what` line does not fit the row, the command fails and you shorten that line.
 
 ```bash
 python3 tools/card-image.py cards/website

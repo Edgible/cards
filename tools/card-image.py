@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draw card-light.svg and card-dark.svg from a card.yml.
+"""Draw images/card-light.svg and images/card-dark.svg from a card.yml.
 
 The picture lists the apps, ports, auth modes and places in the card. It draws
 no caller, no hostname and no machine. Run it from the repo root:
@@ -343,9 +343,11 @@ def draw(directory: Path) -> None:
     bad = check_card(spec)
     if bad:
         raise SystemExit("\n".join(bad))
+    images = directory / "images"
+    images.mkdir(exist_ok=True)
     for theme, palette in PALETTES.items():
-        (directory / f"card-{theme}.svg").write_text(card_svg(spec, palette))
-    print(f"wrote {directory / 'card-light.svg'} and {directory / 'card-dark.svg'}")
+        (images / f"card-{theme}.svg").write_text(card_svg(spec, palette))
+    print(f"wrote {images / 'card-light.svg'} and {images / 'card-dark.svg'}")
 
 
 def main() -> None:

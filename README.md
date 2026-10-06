@@ -2,7 +2,7 @@
 
 Edgible Cards
 
-`cards/` holds the patterns. `tools/` holds the schema and the scripts. A directory under `cards/` that contains `card.yml` is one card. [tools/card.schema.json](tools/card.schema.json) is the source of truth for that file. [tools/card-to-stack.py](tools/card-to-stack.py) writes a stack file from a card. [tools/card-image.py](tools/card-image.py) writes `card-light.svg` and `card-dark.svg` from the same file.
+`cards/` holds the patterns. `tools/` holds the schema and the scripts. A directory under `cards/` that contains `card.yml` is one card. [tools/card.schema.json](tools/card.schema.json) is the source of truth for that file. [tools/card-to-stack.py](tools/card-to-stack.py) writes a stack file from a card. [tools/card-image.py](tools/card-image.py) writes `images/card-light.svg` and `images/card-dark.svg` from the same file.
 
 - [website](cards/website/README.md)
 - [n8n](cards/n8n/README.md)
@@ -40,7 +40,7 @@ A picture is optional and is not part of the schema. Draw it from the card:
 python3 tools/card-image.py cards/desk
 ```
 
-That writes `card-light.svg` and `card-dark.svg` beside `card.yml`. If a `what` line does not fit, shorten it and run the command again. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
+That writes `images/card-light.svg` and `images/card-dark.svg`. If a `what` line does not fit, shorten it and run the command again. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
 
 ```
 https://raw.githubusercontent.com/Edgible/cards/main/cards/desk/docker-compose.yml
