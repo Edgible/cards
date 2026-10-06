@@ -28,18 +28,6 @@ python3 tools/card-to-stack.py cards/website/card.yml --device minipc > website.
 
 One device name applies to every app. `--device web=minipc --device monitor=otherbox` maps each place to a serving device.
 
-## card-publish.py
-
-Publishes the apps on a card. You pass the card and the serving device name. The script looks that name up in `edgible device list` and runs `edgible app create existing` once per app, using the name, port, protocol, and auth mode from the card. Auth mode `org` is passed as `org`.
-
-It does not fetch Compose URLs and does not start containers. The process must already be listening. `--dry-run` prints the commands and does not call the CLI.
-
-```bash
-python3 tools/card-publish.py cards/assistant/card.yml --device minipc
-```
-
-One device name applies to every app. `--device web=minipc --device monitor=otherbox` maps each place to a serving device. An app name overrides its place.
-
 ## card-image.py
 
 Writes `card-light.svg` and `card-dark.svg` next to a `card.yml`. The picture lists the apps, ports, auth modes, and places. It draws no caller, no hostname, and no machine. The words come from the card. If a `what` line does not fit the row, the command fails and you shorten that line.

@@ -32,12 +32,30 @@ docker exec ollama ollama pull qwen2.5:7b
 docker exec ollama ollama pull nomic-embed-text
 ```
 
-Publish the two ports. Both apps are place `desk`, so one device name covers both. Replace `NAME` with the serving device from `edgible device list`. [card-publish.py](../../tools/card-publish.py) reads the card and runs `edgible app create existing` once per app. The organization id comes from the logged-in CLI.
+Publish the two ports. Both apps are place `desk`, so one device name covers both. Replace `NAME` with the serving device from `edgible device list`. The organization id comes from the logged-in CLI. `jq` reads that device's id out of the list.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/card.yml -o ~/assistant-card.yml
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/tools/card-publish.py -o ~/card-publish.py
-python3 ~/card-publish.py ~/assistant-card.yml --device NAME
+device=NAME
+device_id=$(edgible device list --json | jq -er --arg name "$device" '
+  map(select(.name == $name))
+  | if length == 1 then .[0].id
+    else error("need exactly one device named " + $name)
+    end
+')
+edgible app create existing \
+  --non-interactive \
+  --name assistant \
+  --port 8088 \
+  --protocol https \
+  --auth-modes org \
+  --device-id "$device_id"
+edgible app create existing \
+  --non-interactive \
+  --name ollama \
+  --port 11434 \
+  --protocol https \
+  --auth-modes api-key \
+  --device-id "$device_id"
 edgible app list
 ```
 
