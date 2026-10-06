@@ -19,23 +19,23 @@ Five steps. Edit [card.env](card.env) before you start. [docker-compose.yml](doc
 On the machine that will run the containers, fetch this card:
 
 ```bash
-mkdir -p ~/assistant
+mkdir -p assistant
 curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
-  | tar -xz --strip-components=3 -C ~/assistant cards-main/cards/assistant
+  | tar -xz --strip-components=3 -C assistant cards-main/cards/assistant
 ```
 
 ### 2. Edit card.env
 
-Open `~/assistant/card.env` and follow the comments in that file.
+Open `assistant/card.env` and follow the comments in that file.
 
 ```bash
-nano ~/assistant/card.env
+nano assistant/card.env
 ```
 
 ### 3. Start
 
 ```bash
-docker compose --env-file ~/assistant/card.env -f ~/assistant/docker-compose.yml up -d
+docker compose --env-file assistant/card.env -f assistant/docker-compose.yml up -d
 ```
 
 ### 4. Pull the models
@@ -53,7 +53,7 @@ docker exec ollama ollama pull nomic-embed-text
 
 ```bash
 set -a
-. ~/assistant/card.env
+. assistant/card.env
 set +a
 device_id=$(edgible device list --json | jq -er --arg name "$DEVICE" '
   map(select(.name == $name))
