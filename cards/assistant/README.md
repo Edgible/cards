@@ -28,18 +28,18 @@ curl -fsSL https://raw.githubusercontent.com/open-webui/open-webui/main/docker-c
 
 ### 2. Edit card.env
 
-Open `~/assistant/card.env` and follow the comments in that file. To set a value from the shell, replace `NAME` and run one of these.
+Open `~/assistant/card.env` and follow the comments in that file.
 
 Linux:
 
 ```bash
-sed -i 's/^DEVICE=.*/DEVICE=NAME/' ~/assistant/card.env
+nano ~/assistant/card.env
 ```
 
 macOS:
 
 ```bash
-sed -i '' 's/^DEVICE=.*/DEVICE=NAME/' ~/assistant/card.env
+open -e ~/assistant/card.env
 ```
 
 ### 3. Tailor and start
