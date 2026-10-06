@@ -28,7 +28,7 @@ curl -fsSL https://raw.githubusercontent.com/open-webui/open-webui/main/docker-c
 
 ### 2. Edit card.env
 
-Open `~/assistant/card.env`. Set `DEVICE` to the serving device from `edgible device list`. Both apps are place `desk`, so one name covers both. Leave `ASSISTANT_PORT` and `OLLAMA_PORT` unless this machine needs different host ports. The organization id comes from the logged-in CLI.
+Open `~/assistant/card.env` and follow the comments in that file.
 
 ### 3. Tailor and start
 
