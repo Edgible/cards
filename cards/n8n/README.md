@@ -6,28 +6,69 @@ Moving work between systems usually goes to a hosted automation service, along w
 
 ## What
 
-Both apps are the place `workhorse`, so they stay on one serving device. They share port `5678`. The card starts from the Compose file n8n publishes, which runs Postgres and a task runner. The card is [card.yml](card.yml).
+Both apps are the place `workhorse`, so they stay on one serving device. They share port `5678`. The Compose file is [docker-compose.yml](docker-compose.yml). It runs Postgres and a task runner, and [init-data.sh](init-data.sh) sits next to it. The file reads the passwords, the host port, and `ORG_LABEL` from [card.env](card.env). The editor hostname is `n8n` plus that label. The webhook hostname is `n8n-hooks` plus that label. The card is [card.yml](card.yml).
 
 ## How
 
-[tailor.sh](tailor.sh) applies the edits on the card. The script does not contain an org label, a hostname, or a password. It exits if an expected edit is not in the file afterwards. Running it again is safe.
+Five steps. Edit [card.env](card.env) before you start. [docker-compose.yml](docker-compose.yml) reads that file.
 
-The org label is the part of a hostname you already have between the first dot and `.edgible.com`. One published app is enough to read it. On the machine that will run the container:
+### 1. Fetch
+
+On the machine that will run the containers, fetch this card:
 
 ```bash
 mkdir -p ~/n8n
-curl -fsSL https://raw.githubusercontent.com/n8n-io/n8n-hosting/main/docker-compose/withPostgres/docker-compose.yml -o ~/n8n/docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/n8n-io/n8n-hosting/main/docker-compose/withPostgres/.env -o ~/n8n/.env
-curl -fsSL https://raw.githubusercontent.com/n8n-io/n8n-hosting/main/docker-compose/withPostgres/init-data.sh -o ~/n8n/init-data.sh
-chmod +x ~/n8n/init-data.sh
-org=$(edgible app list --json | python3 -c '
-import json, sys
-apps = json.load(sys.stdin)
-hosts = [h for app in apps for h in (app.get("hostnames") or [])]
-if not hosts:
-    sys.exit("need one published app so the org label is known")
-print(hosts[0].split(".", 1)[1].removesuffix(".edgible.com"))
-')
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/n8n/tailor.sh -o ~/n8n-tailor.sh
-bash ~/n8n-tailor.sh ~/n8n "$org"
+curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
+  | tar -xz --strip-components=3 -C ~/n8n cards-main/cards/n8n
 ```
+
+### 2. Edit card.env
+
+Open `~/n8n/card.env` and follow the comments in that file.
+
+```bash
+nano ~/n8n/card.env
+```
+
+### 3. Start
+
+```bash
+docker compose --env-file ~/n8n/card.env -f ~/n8n/docker-compose.yml up -d
+```
+
+### 4. Create the owner
+
+Open `http://127.0.0.1:5678` and create the n8n owner. This account stays on this machine.
+
+### 5. Publish
+
+`jq` reads that device's id out of `edgible device list`.
+
+```bash
+set -a
+. ~/n8n/card.env
+set +a
+device_id=$(edgible device list --json | jq -er --arg name "$DEVICE" '
+  map(select(.name == $name))
+  | if length == 1 then .[0].id
+    else error("need exactly one device named " + $name)
+    end
+')
+edgible app create existing \
+  --non-interactive \
+  --name n8n \
+  --port "$N8N_PORT" \
+  --protocol https \
+  --auth-modes org \
+  --device-id "$device_id"
+edgible app create existing \
+  --non-interactive \
+  --name n8n-hooks \
+  --port "$N8N_PORT" \
+  --protocol https \
+  --auth-modes none \
+  --device-id "$device_id"
+edgible app list
+```
+
+`edgible app list` shows `n8n` with `org` and `n8n-hooks` with `none`. The editor hostname asks for an org login. The webhook hostname is open.

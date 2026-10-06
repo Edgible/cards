@@ -8,22 +8,100 @@ A site, the count of who read it, and a check that it is still up are usually th
 
 `site` is nginx serving your files, open to anyone. `analytics` is the Umami tracking script, also open. `umami` is that same process with its dashboard behind an org login, and it needs Postgres. Those three share the place `web`, so they run on one serving device. `status` is Uptime Kuma behind an org login, on the place `monitor`, which can be a second serving device. A monitor on the same machine as the site cannot report that machine going down.
 
-Umami and Uptime Kuma start from the Compose files those projects publish. The site has no upstream Compose file, so `docker-compose.yml` sits next to this card. The sample page is [etc/index.html](etc/index.html). The card is [card.yml](card.yml).
+The Compose files are [docker-compose.yml](docker-compose.yml), [umami-compose.yml](umami-compose.yml), and [kuma-compose.yml](kuma-compose.yml). They read the host ports and the Umami secrets from [card.env](card.env). The sample page is [etc/index.html](etc/index.html). The card is [card.yml](card.yml).
 
 ## How
 
-The card lists the edits. [tailor.sh](tailor.sh) applies that list. An existing `~/site/public/index.html` is left as it is. On the machine that will run the containers:
+Five steps. Edit [card.env](card.env) before you start. The Compose files read that file.
+
+### 1. Fetch
+
+On the machine that will run the containers, fetch this card:
 
 ```bash
-mkdir -p ~/site/public ~/umami ~/uptime-kuma
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/website/docker-compose.yml -o ~/site/docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/umami-software/umami/master/docker-compose.yml -o ~/umami/docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/louislam/uptime-kuma/master/compose.yaml -o ~/uptime-kuma/compose.yaml
-if [ ! -f ~/site/public/index.html ]; then
-  curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/website/etc/index.html -o ~/site/public/index.html
-fi
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/website/tailor.sh -o ~/website-tailor.sh
-bash ~/website-tailor.sh
+mkdir -p ~/website
+curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
+  | tar -xz --strip-components=3 -C ~/website cards-main/cards/website
 ```
 
-The script writes `~/umami/.env` when that file is missing. It does not store the generated values. It exits if an expected edit is not in the file afterwards. Running it again is safe. Other directories are `bash ~/website-tailor.sh ~/umami ~/uptime-kuma`.
+### 2. Edit card.env
+
+Open `~/website/card.env` and follow the comments in that file.
+
+```bash
+nano ~/website/card.env
+```
+
+### 3. Start the site and Umami
+
+An existing `~/website/public/index.html` is left as it is. Place `web` runs these two Compose files.
+
+```bash
+mkdir -p ~/website/public
+if [ ! -f ~/website/public/index.html ]; then
+  cp ~/website/etc/index.html ~/website/public/index.html
+fi
+docker compose --project-name site --env-file ~/website/card.env -f ~/website/docker-compose.yml up -d
+docker compose --project-name umami --env-file ~/website/card.env -f ~/website/umami-compose.yml up -d
+```
+
+### 4. Start the monitor
+
+On the machine for place `monitor`, fetch this card the same way and edit `card.env` there. Then:
+
+```bash
+docker compose --project-name status --env-file ~/website/card.env -f ~/website/kuma-compose.yml up -d
+```
+
+When both places are the same machine, run that command in the same directory. That file reads `STATUS_PORT`.
+
+### 5. Publish
+
+`jq` reads each device's id out of `edgible device list`.
+
+```bash
+set -a
+. ~/website/card.env
+set +a
+device_id() {
+  edgible device list --json | jq -er --arg name "$1" '
+    map(select(.name == $name))
+    | if length == 1 then .[0].id
+      else error("need exactly one device named " + $name)
+      end
+  '
+}
+web_id=$(device_id "$WEB_DEVICE")
+monitor_id=$(device_id "$MONITOR_DEVICE")
+edgible app create existing \
+  --non-interactive \
+  --name site \
+  --port "$SITE_PORT" \
+  --protocol https \
+  --auth-modes none \
+  --device-id "$web_id"
+edgible app create existing \
+  --non-interactive \
+  --name analytics \
+  --port "$UMAMI_PORT" \
+  --protocol https \
+  --auth-modes none \
+  --device-id "$web_id"
+edgible app create existing \
+  --non-interactive \
+  --name umami \
+  --port "$UMAMI_PORT" \
+  --protocol https \
+  --auth-modes org \
+  --device-id "$web_id"
+edgible app create existing \
+  --non-interactive \
+  --name status \
+  --port "$STATUS_PORT" \
+  --protocol https \
+  --auth-modes org \
+  --device-id "$monitor_id"
+edgible app list
+```
+
+`edgible app list` shows `site` and `analytics` with `none`, and `umami` and `status` with `org`. Open the site hostname and you see the sample page. Open the umami hostname, sign in with `org`, and create the Umami admin on the first visit. Open the status hostname, sign in with `org`, and create the Uptime Kuma admin on the first visit.

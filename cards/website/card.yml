@@ -16,8 +16,6 @@ applications:
     place: web
     resources:
       compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/docker-compose.yml
-      files:
-        - https://raw.githubusercontent.com/Edgible/cards/main/cards/website/etc/index.html
 
   - name: analytics
     what: Umami tracking script, same process as umami
@@ -29,11 +27,7 @@ applications:
     authModes: [none]
     place: web
     resources:
-      compose: https://raw.githubusercontent.com/umami-software/umami/master/docker-compose.yml
-      changes:
-        - Bind the host port to 127.0.0.1 only
-        - Replace the sample database password, APP_SECRET, and TWO_FACTOR_ENCRYPTION_KEY with generated values
-      env: [POSTGRES_PASSWORD, APP_SECRET, TWO_FACTOR_ENCRYPTION_KEY]
+      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/umami-compose.yml
 
   - name: umami
     what: Umami dashboard
@@ -46,11 +40,7 @@ applications:
     authModes: [org]
     place: web
     resources:
-      compose: https://raw.githubusercontent.com/umami-software/umami/master/docker-compose.yml
-      changes:
-        - Bind the host port to 127.0.0.1 only
-        - Replace the sample database password, APP_SECRET, and TWO_FACTOR_ENCRYPTION_KEY with generated values
-      env: [POSTGRES_PASSWORD, APP_SECRET, TWO_FACTOR_ENCRYPTION_KEY]
+      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/umami-compose.yml
 
   - name: status
     what: Uptime Kuma
@@ -62,6 +52,4 @@ applications:
     authModes: [org]
     place: monitor
     resources:
-      compose: https://raw.githubusercontent.com/louislam/uptime-kuma/master/compose.yaml
-      changes:
-        - Bind the host port to 127.0.0.1 only
+      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/kuma-compose.yml
