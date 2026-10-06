@@ -50,8 +50,7 @@
         "subtype",
         "published",
         "authModes",
-        "place",
-        "resources"
+        "place"
       ],
       "properties": {
         "name": {
@@ -102,50 +101,7 @@
         "place": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9-]*$",
-          "description": "Topology name, not a device name and not a device id. Applications with the same place run on one serving device. Two applications that are one process share a place, a port, a from, and the same resources."
-        },
-        "resources": {
-          "$ref": "#/$defs/resources"
-        }
-      }
-    },
-    "resources": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "compose": {
-          "type": "string",
-          "format": "uri",
-          "pattern": "^https://[^\\s<>]+$",
-          "description": "Public URL of the Compose file to run. This is the file in the card. Omit this key when there is no Compose file yet. Passwords and volume data are not in this file."
-        },
-        "files": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "format": "uri",
-            "pattern": "^https://[^\\s<>]+$"
-          },
-          "description": "Other public URLs the Compose file expects beside it."
-        },
-        "changes": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "minLength": 1
-          },
-          "description": "Edits to make before running the Compose file, such as binding the host port to 127.0.0.1. Omit this key when the compose URL is already the file to run. A hostname setting names the app, for example the hostname of this app, or the hostname of the None app. It does not contain an organization label."
-        },
-        "env": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "pattern": "^[A-Z][A-Z0-9_]*$"
-          },
-          "description": "Names of variables to generate on the machine that runs the pattern. Values are not stored on the card."
+          "description": "Topology name, not a device name and not a device id. Applications with the same place run on one serving device. Two applications that are one process share a place, a port, and a from."
         }
       }
     }

@@ -14,8 +14,6 @@ applications:
     published: true
     authModes: [org]
     place: desk
-    resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/docker-compose.yml
 
   - name: ollama
     what: chat and embedding models
@@ -26,5 +24,3 @@ applications:
     published: true
     authModes: [api-key]
     place: desk
-    resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/docker-compose.yml

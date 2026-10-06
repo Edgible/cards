@@ -13,9 +13,7 @@ This script checks only the fields it copies into a stack file.
 
 The organization id is `edgible config get organizationId`, unless you pass
 `--org`. The workload is `pre-existing`: the process must already be listening
-on the named device. Each application has a `resources` section naming the public URLs that app
-needs. This script does not fetch those URLs, does not copy them into the
-stack file, and does not start containers.
+on the named device. This script does not start containers.
 """
 
 from __future__ import annotations
@@ -38,17 +36,9 @@ def parse_card(text: str) -> list[dict[str, str]]:
     apps: list[dict[str, str]] = []
     current: dict[str, str] | None = None
     in_apps = False
-    # A resources section hangs off one application. The stack file does not
-    # use it, so lines nested under that key are skipped.
-    skip_deeper_than: int | None = None
     for raw in text.splitlines():
         if not raw.strip() or raw.strip().startswith("#"):
             continue
-        indent = len(raw) - len(raw.lstrip(" "))
-        if skip_deeper_than is not None:
-            if indent > skip_deeper_than:
-                continue
-            skip_deeper_than = None
         stripped = raw.strip()
         if stripped == "applications:":
             in_apps = True
@@ -65,9 +55,6 @@ def parse_card(text: str) -> list[dict[str, str]]:
         key, value = stripped.split(":", 1)
         key = key.strip()
         value = value.strip()
-        if key == "resources" and not value:
-            skip_deeper_than = indent
-            continue
         current[key] = value
     if current:
         apps.append(current)

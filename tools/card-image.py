@@ -73,15 +73,9 @@ def parse_card(text: str) -> tuple[str, list[dict[str, str]]]:
     apps: list[dict[str, str]] = []
     current: dict[str, str] | None = None
     in_apps = False
-    skip: int | None = None
     for raw in text.splitlines():
         if not raw.strip() or raw.strip().startswith("#"):
             continue
-        indent = len(raw) - len(raw.lstrip(" "))
-        if skip is not None:
-            if indent > skip:
-                continue
-            skip = None
         stripped = raw.strip()
         if stripped == "applications:":
             in_apps = True
@@ -100,9 +94,6 @@ def parse_card(text: str) -> tuple[str, list[dict[str, str]]]:
         key, value = stripped.split(":", 1)
         key = key.strip()
         value = value.strip()
-        if key == "resources" and not value:
-            skip = indent
-            continue
         current[key] = value
     if current:
         apps.append(current)

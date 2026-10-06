@@ -15,8 +15,6 @@ applications:
     published: true
     authModes: [org]
     place: workhorse
-    resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/n8n/docker-compose.yml
 
   - name: n8n-hooks
     what: n8n webhooks, same process as n8n
@@ -27,5 +25,3 @@ applications:
     published: true
     authModes: [none]
     place: workhorse
-    resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/n8n/docker-compose.yml

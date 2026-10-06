@@ -40,11 +40,7 @@ A picture is optional and is not part of the schema. Draw it from the card:
 python3 tools/card-image.py cards/desk
 ```
 
-That writes `images/card-light.svg` and `images/card-dark.svg`. If a `what` line does not fit, shorten it and run the command again. A sample file that the card hands you, such as a PDF or a page, goes in `etc/`. The Compose file the card runs sits next to `card.yml`. Set `compose` to the raw URL it will have on `main`:
-
-```
-https://raw.githubusercontent.com/Edgible/cards/main/cards/desk/docker-compose.yml
-```
+That writes `images/card-light.svg` and `images/card-dark.svg`. If a `what` line does not fit, shorten it and run the command again. A sample file that the card hands you, such as a PDF or a page, goes in `etc/`. The Compose file the card runs sits next to `card.yml`.
 
 Machine settings go in `card.env`. The Compose file reads that file. A later change to the upstream project is an update to this Compose file. Leave device names, hostnames, organization ids, and passwords out of the Compose file and out of `card.env` in git.
 

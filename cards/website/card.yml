@@ -14,8 +14,6 @@ applications:
     published: true
     authModes: [none]
     place: web
-    resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/docker-compose.yml
 
   - name: analytics
     what: Umami tracking script, same process as umami
@@ -26,8 +24,6 @@ applications:
     published: true
     authModes: [none]
     place: web
-    resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/umami-compose.yml
 
   - name: umami
     what: Umami dashboard
@@ -39,8 +35,6 @@ applications:
     published: true
     authModes: [org]
     place: web
-    resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/umami-compose.yml
 
   - name: status
     what: Uptime Kuma
@@ -51,5 +45,3 @@ applications:
     published: true
     authModes: [org]
     place: monitor
-    resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/kuma-compose.yml
