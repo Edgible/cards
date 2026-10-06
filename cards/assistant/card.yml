@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: assistant
+  description: Chat that answers from your own documents, and the model that runs it
+
+applications:
+  - name: assistant
+    what: chat over your documents
+    from: ghcr.io/open-webui/open-webui:main
+    port: 8088
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [org]
+    place: desk
+    resources:
+      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/docker-compose.yml
+
+  - name: ollama
+    what: chat and embedding models
+    from: ollama/ollama:latest
+    port: 11434
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [api-key]
+    place: desk
+    resources:
+      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/docker-compose.yml
