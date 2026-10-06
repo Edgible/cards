@@ -12,7 +12,7 @@ Port `8088` is the host port. The website card already uses `8080` for nginx. Th
 
 ## How
 
-The card lists the edits. [tailor.sh](tailor.sh) applies that list. The script does not contain a device name, a hostname, or a password. It exits if an expected edit is not in the file afterwards. Running it again is safe.
+The card lists the edits. [tailor.sh](tailor.sh) applies that list and reads the ports from [card.env](card.env) in the same directory. The script does not contain a device name, a hostname, or a password. It exits if an expected edit is not in the file afterwards. Running it again is safe.
 
 On the machine that will run the containers, fetch the Compose file Open WebUI publishes, the sample document, the settings, and the script:
 
@@ -48,14 +48,14 @@ device_id=$(edgible device list --json | jq -er --arg name "$DEVICE" '
 edgible app create existing \
   --non-interactive \
   --name assistant \
-  --port 8088 \
+  --port "$ASSISTANT_PORT" \
   --protocol https \
   --auth-modes org \
   --device-id "$device_id"
 edgible app create existing \
   --non-interactive \
   --name ollama \
-  --port 11434 \
+  --port "$OLLAMA_PORT" \
   --protocol https \
   --auth-modes api-key \
   --device-id "$device_id"
