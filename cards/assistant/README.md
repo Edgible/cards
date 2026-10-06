@@ -16,14 +16,14 @@ Five steps. Edit [card.env](card.env) before [tailor.sh](tailor.sh). The script 
 
 ### 1. Fetch
 
-On the machine that will run the containers, fetch the Compose file Open WebUI publishes, the sample document, the settings, and the script:
+On the machine that will run the containers, fetch this card, then the Compose file Open WebUI publishes. That Compose file is not in the card directory.
 
 ```bash
 mkdir -p ~/assistant
-curl -fsSL https://raw.githubusercontent.com/open-webui/open-webui/main/docker-compose.yaml -o ~/assistant/docker-compose.yaml
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/etc/sample-help.pdf -o ~/assistant/sample-help.pdf
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/card.env -o ~/assistant/card.env
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/tailor.sh -o ~/assistant/tailor.sh
+curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
+  | tar -xz --strip-components=3 -C ~/assistant cards-main/cards/assistant
+curl -fsSL https://raw.githubusercontent.com/open-webui/open-webui/main/docker-compose.yaml \
+  -o ~/assistant/docker-compose.yaml
 ```
 
 ### 2. Edit card.env
