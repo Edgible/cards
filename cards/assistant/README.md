@@ -32,14 +32,12 @@ docker exec ollama ollama pull qwen2.5:7b
 docker exec ollama ollama pull nomic-embed-text
 ```
 
-Publish the two ports. Both apps are place `desk`, so one device name covers both. Replace `NAME` with the serving device from `edgible device list`. The organization id comes from the logged-in CLI. [card-to-stack.py](../../tools/card-to-stack.py) writes one Application document per app. `org` in the card is written `edgible-login` in the stack file. `api-key` stays `api-key`.
+Publish the two ports. Both apps are place `desk`, so one device name covers both. Replace `NAME` with the serving device from `edgible device list`. [card-publish.py](../../tools/card-publish.py) reads the card and runs `edgible app create existing` once per app. The organization id comes from the logged-in CLI.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/card.yml -o ~/assistant-card.yml
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/tools/card-to-stack.py -o ~/card-to-stack.py
-python3 ~/card-to-stack.py ~/assistant-card.yml --device NAME > ~/assistant.stack.yml
-edgible stack validate -f ~/assistant.stack.yml
-edgible stack deploy -f ~/assistant.stack.yml
+curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/tools/card-publish.py -o ~/card-publish.py
+python3 ~/card-publish.py ~/assistant-card.yml --device NAME
 edgible app list
 ```
 
