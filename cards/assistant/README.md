@@ -14,12 +14,13 @@ Port `8088` is the host port. The website card already uses `8080` for nginx. Th
 
 The card lists the edits. [tailor.sh](tailor.sh) applies that list. The script does not contain a device name, a hostname, or a password. It exits if an expected edit is not in the file afterwards. Running it again is safe.
 
-On the machine that will run the containers, fetch the Compose file Open WebUI publishes, the sample document, and the script:
+On the machine that will run the containers, fetch the Compose file Open WebUI publishes, the sample document, the settings, and the script:
 
 ```bash
 mkdir -p ~/assistant
 curl -fsSL https://raw.githubusercontent.com/open-webui/open-webui/main/docker-compose.yaml -o ~/assistant/docker-compose.yaml
 curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/etc/sample-help.pdf -o ~/assistant/sample-help.pdf
+curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/card.env -o ~/assistant/card.env
 curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/tailor.sh -o ~/assistant-tailor.sh
 bash ~/assistant-tailor.sh ~/assistant
 ```
@@ -32,11 +33,13 @@ docker exec ollama ollama pull qwen2.5:7b
 docker exec ollama ollama pull nomic-embed-text
 ```
 
-Publish the two ports. Both apps are place `desk`, so one device name covers both. Replace `NAME` with the serving device from `edgible device list`. The organization id comes from the logged-in CLI. `jq` reads that device's id out of the list.
+Publish the two ports. Both apps are place `desk`, so one device name covers both. Set `DEVICE` in `~/assistant/card.env` to the serving device from `edgible device list`. The organization id comes from the logged-in CLI. `jq` reads that device's id out of the list.
 
 ```bash
-device=NAME
-device_id=$(edgible device list --json | jq -er --arg name "$device" '
+set -a
+. ~/assistant/card.env
+set +a
+device_id=$(edgible device list --json | jq -er --arg name "$DEVICE" '
   map(select(.name == $name))
   | if length == 1 then .[0].id
     else error("need exactly one device named " + $name)
