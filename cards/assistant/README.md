@@ -30,16 +30,8 @@ curl -fsSL https://raw.githubusercontent.com/open-webui/open-webui/main/docker-c
 
 Open `~/assistant/card.env` and follow the comments in that file.
 
-Linux:
-
 ```bash
 nano ~/assistant/card.env
-```
-
-macOS:
-
-```bash
-open -e ~/assistant/card.env
 ```
 
 ### 3. Tailor and start
