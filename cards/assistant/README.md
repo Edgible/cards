@@ -12,7 +12,7 @@ Port `8088` is the host port. The website card already uses `8080` for nginx. Th
 
 ## How
 
-Five steps. Edit [card.env](card.env) before [tailor.sh](tailor.sh). The script reads the ports from that file. It does not contain a device name, a hostname, or a password. It exits if an expected edit is missing. Running it again is safe.
+Five steps. Edit [card.env](card.env) before you start. Step 3 has two starts. [tailor.sh](tailor.sh) edits the Compose file Open WebUI publishes and reads the ports from `card.env`. [docker-compose.yml](docker-compose.yml) is this card's own Compose file. It reads the same ports from `card.env` and does not use `tailor.sh`. Run one of the two. The script does not contain a device name, a hostname, or a password. It exits if an expected edit is missing. Running it again is safe.
 
 ### 1. Fetch
 
@@ -36,9 +36,17 @@ nano ~/assistant/card.env
 
 ### 3. Tailor and start
 
+Gold file. `tailor.sh` edits `docker-compose.yaml`.
+
 ```bash
 bash ~/assistant/tailor.sh ~/assistant
 docker compose -f ~/assistant/docker-compose.yaml up -d
+```
+
+Author file. Compose reads the ports from `card.env`.
+
+```bash
+docker compose --env-file ~/assistant/card.env -f ~/assistant/docker-compose.yml up -d
 ```
 
 ### 4. Pull the models
