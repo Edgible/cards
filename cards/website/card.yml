@@ -17,7 +17,7 @@ applications:
     resources:
       compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/website/docker-compose.yml
       files:
-        - https://raw.githubusercontent.com/Edgible/cards/main/cards/website/public/index.html
+        - https://raw.githubusercontent.com/Edgible/cards/main/cards/website/etc/index.html
 
   - name: analytics
     what: Umami tracking script, same process as umami
