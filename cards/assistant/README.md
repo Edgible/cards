@@ -12,7 +12,9 @@ Port `8088` is the host port. The website card already uses `8080` for nginx. Th
 
 ## How
 
-The card lists the edits. [tailor.sh](tailor.sh) applies that list and reads the ports from [card.env](card.env) in the same directory. The script does not contain a device name, a hostname, or a password. It exits if an expected edit is not in the file afterwards. Running it again is safe.
+Five steps. Edit [card.env](card.env) before [tailor.sh](tailor.sh). The script reads the ports from that file. It does not contain a device name, a hostname, or a password. It exits if an expected edit is missing. Running it again is safe.
+
+### 1. Fetch
 
 On the machine that will run the containers, fetch the Compose file Open WebUI publishes, the sample document, the settings, and the script:
 
@@ -21,19 +23,32 @@ mkdir -p ~/assistant
 curl -fsSL https://raw.githubusercontent.com/open-webui/open-webui/main/docker-compose.yaml -o ~/assistant/docker-compose.yaml
 curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/etc/sample-help.pdf -o ~/assistant/sample-help.pdf
 curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/card.env -o ~/assistant/card.env
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/tailor.sh -o ~/assistant-tailor.sh
-bash ~/assistant-tailor.sh ~/assistant
+curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/tailor.sh -o ~/assistant/tailor.sh
 ```
 
-Start the containers, then pull the models. `qwen2.5:7b` is the chat model. `nomic-embed-text` is the embedding model. The pulls are large and stay on this machine.
+### 2. Edit card.env
+
+Open `~/assistant/card.env`. Set `DEVICE` to the serving device from `edgible device list`. Both apps are place `desk`, so one name covers both. Leave `ASSISTANT_PORT` and `OLLAMA_PORT` unless this machine needs different host ports. The organization id comes from the logged-in CLI.
+
+### 3. Tailor and start
 
 ```bash
+bash ~/assistant/tailor.sh ~/assistant
 docker compose -f ~/assistant/docker-compose.yaml up -d
+```
+
+### 4. Pull the models
+
+`qwen2.5:7b` is the chat model. `nomic-embed-text` is the embedding model. The pulls are large and stay on this machine.
+
+```bash
 docker exec ollama ollama pull qwen2.5:7b
 docker exec ollama ollama pull nomic-embed-text
 ```
 
-Publish the two ports. Both apps are place `desk`, so one device name covers both. Set `DEVICE` in `~/assistant/card.env` to the serving device from `edgible device list`. The organization id comes from the logged-in CLI. `jq` reads that device's id out of the list.
+### 5. Publish
+
+`jq` reads that device's id out of `edgible device list`.
 
 ```bash
 set -a
