@@ -55,3 +55,4 @@ python3 tools/check-cards.py cards/desk/card.yml
 ```
 
 `ok` means the file matches the schema and the directory name. Open a pull request. A maintainer merges it onto `main`. That merge is the publish. An update to a card that already exists is a pull request that changes that `card.yml`, and a maintainer decides whether the change belongs there.
+
