@@ -117,7 +117,7 @@
           "type": "string",
           "format": "uri",
           "pattern": "^https://[^\\s<>]+$",
-          "description": "Public URL of the Compose file. For an existing app, assume the gold Compose file for the image. Omit this key when the image has no published Compose file yet. Passwords and volume data are not in this file."
+          "description": "Public URL of the Compose file to run. This is the file in the card. Omit this key when there is no Compose file yet. Passwords and volume data are not in this file."
         },
         "files": {
           "type": "array",

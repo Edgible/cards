@@ -8,22 +8,20 @@ Asking questions of your own documents usually means handing those files to some
 
 Both apps are the place `desk`, so they stay on one serving device. `assistant` is Open WebUI on port `8088`, behind an org login. `ollama` is the chat model and the embedding model on port `11434`, behind an API key. Open WebUI calls Ollama on the machine, not through the public hostname. The document index stays inside Open WebUI.
 
-Port `8088` is the host port. The website card already uses `8080` for nginx. The card starts from the Compose file Open WebUI publishes. The sample document is [etc/sample-help.pdf](etc/sample-help.pdf). The card is [card.yml](card.yml).
+Port `8088` is the host port. The website card already uses `8080` for nginx. The Compose file is [docker-compose.yml](docker-compose.yml). It reads the host ports from [card.env](card.env). The sample document is [etc/sample-help.pdf](etc/sample-help.pdf). The card is [card.yml](card.yml).
 
 ## How
 
-Five steps. Edit [card.env](card.env) before you start. Step 3 has two starts. [tailor.sh](tailor.sh) edits the Compose file Open WebUI publishes and reads the ports from `card.env`. [docker-compose.yml](docker-compose.yml) is this card's own Compose file. It reads the same ports from `card.env` and does not use `tailor.sh`. Run one of the two. The script does not contain a device name, a hostname, or a password. It exits if an expected edit is missing. Running it again is safe.
+Five steps. Edit [card.env](card.env) before you start. [docker-compose.yml](docker-compose.yml) reads the host ports from that file.
 
 ### 1. Fetch
 
-On the machine that will run the containers, fetch this card, then the Compose file Open WebUI publishes. That Compose file is not in the card directory.
+On the machine that will run the containers, fetch this card:
 
 ```bash
 mkdir -p ~/assistant
 curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
   | tar -xz --strip-components=3 -C ~/assistant cards-main/cards/assistant
-curl -fsSL https://raw.githubusercontent.com/open-webui/open-webui/main/docker-compose.yaml \
-  -o ~/assistant/docker-compose.yaml
 ```
 
 ### 2. Edit card.env
@@ -34,16 +32,7 @@ Open `~/assistant/card.env` and follow the comments in that file.
 nano ~/assistant/card.env
 ```
 
-### 3. Tailor and start
-
-Gold file. `tailor.sh` edits `docker-compose.yaml`.
-
-```bash
-bash ~/assistant/tailor.sh ~/assistant
-docker compose -f ~/assistant/docker-compose.yaml up -d
-```
-
-Author file. Compose reads the ports from `card.env`.
+### 3. Start
 
 ```bash
 docker compose --env-file ~/assistant/card.env -f ~/assistant/docker-compose.yml up -d

@@ -32,7 +32,7 @@ mkdir -p cards/desk
 
 Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data.
 
-Write `cards/desk/README.md` with three headings: Why, What, and How. Why is the problem this card solves. What is the apps and the places. How is how to fetch the files and run `tailor.sh` when the card has one. Leave device names, hostnames, organization ids, and passwords out of that file. The schema does not check it.
+Write `cards/desk/README.md` with three headings: Why, What, and How. Why is the problem this card solves. What is the apps and the places. How is how to fetch the card, edit `card.env`, and start the Compose file. Leave device names, hostnames, organization ids, and passwords out of that file. The schema does not check it.
 
 A picture is optional and is not part of the schema. Draw it from the card:
 
@@ -40,13 +40,13 @@ A picture is optional and is not part of the schema. Draw it from the card:
 python3 tools/card-image.py cards/desk
 ```
 
-That writes `images/card-light.svg` and `images/card-dark.svg`. If a `what` line does not fit, shorten it and run the command again. A sample file that the card hands you, such as a PDF or a page, goes in `etc/`. If the Compose file is not already public, put it next to `card.yml` and set `compose` to the raw URL it will have on `main`:
+That writes `images/card-light.svg` and `images/card-dark.svg`. If a `what` line does not fit, shorten it and run the command again. A sample file that the card hands you, such as a PDF or a page, goes in `etc/`. The Compose file the card runs sits next to `card.yml`. Set `compose` to the raw URL it will have on `main`:
 
 ```
 https://raw.githubusercontent.com/Edgible/cards/main/cards/desk/docker-compose.yml
 ```
 
-A script that applies this card's `changes` is optional. The `changes` list in `card.yml` stays the description of the edits. The script is a way to apply that list. Name it `tailor.sh` and put it in the same directory as `card.yml`. In `README.md`, say what it does, the command to run it, and what the person running it must supply, such as an org label. Leave device names, hostnames, organization ids, and passwords out of the script. `tools/` is for scripts that work on any card. A card with no script is still complete.
+Machine settings go in `card.env`. The Compose file reads that file. A later change to the upstream project is an update to this Compose file. Leave device names, hostnames, organization ids, and passwords out of the Compose file and out of `card.env` in git.
 
 Check the file. This needs the `pyyaml` and `jsonschema` packages. The same check runs on the pull request.
 
