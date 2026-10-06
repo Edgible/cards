@@ -12,7 +12,9 @@ Port `8088` is the host port. The website card already uses `8080` for nginx. Th
 
 ## How
 
-The card lists the edits. [tailor.sh](tailor.sh) applies that list. The script does not contain a device name, a hostname, or a password. It exits if an expected edit is not in the file afterwards. Running it again is safe. On the machine that will run the containers:
+The card lists the edits. [tailor.sh](tailor.sh) applies that list. The script does not contain a device name, a hostname, or a password. It exits if an expected edit is not in the file afterwards. Running it again is safe.
+
+On the machine that will run the containers, fetch the Compose file Open WebUI publishes, the sample document, and the script:
 
 ```bash
 mkdir -p ~/assistant
@@ -22,8 +24,25 @@ curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/
 bash ~/assistant-tailor.sh ~/assistant
 ```
 
-After the containers are up, pull `qwen2.5:7b` and `nomic-embed-text`. `qwen2.5:7b` is the chat model. `nomic-embed-text` is the embedding model. The pulls are large and stay on this machine.
+Start the containers, then pull the models. `qwen2.5:7b` is the chat model. `nomic-embed-text` is the embedding model. The pulls are large and stay on this machine.
 
-Open the assistant after it is published. Sign in with `org`, then create the Open WebUI admin on the first visit. In **Admin Settings**, then **Documents**, set the embedding engine to Ollama and the model to `nomic-embed-text`. In **Workspace**, then **Knowledge**, create a collection and upload `sample-help.pdf`. Wait until processing finishes. Attach that collection to the chat model under **Workspace**, then **Models**.
+```bash
+docker compose -f ~/assistant/docker-compose.yaml up -d
+docker exec ollama ollama pull qwen2.5:7b
+docker exec ollama ollama pull nomic-embed-text
+```
+
+Publish the two ports. Both apps are place `desk`, so one device name covers both. Replace `NAME` with the serving device from `edgible device list`. The organization id comes from the logged-in CLI. [card-to-stack.py](../../tools/card-to-stack.py) writes one Application document per app. `org` in the card is written `edgible-login` in the stack file. `api-key` stays `api-key`.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/card.yml -o ~/assistant-card.yml
+curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/tools/card-to-stack.py -o ~/card-to-stack.py
+python3 ~/card-to-stack.py ~/assistant-card.yml --device NAME > ~/assistant.stack.yml
+edgible stack validate -f ~/assistant.stack.yml
+edgible stack deploy -f ~/assistant.stack.yml
+edgible app list
+```
+
+`edgible app list` shows `assistant` with `org` and `ollama` with `api-key`. Open the assistant hostname. Sign in with `org`, then create the Open WebUI admin on the first visit. In **Admin Settings**, then **Documents**, set the embedding engine to Ollama and the model to `nomic-embed-text`. In **Workspace**, then **Knowledge**, create a collection and upload `sample-help.pdf`. Wait until processing finishes. Attach that collection to the chat model under **Workspace**, then **Models**.
 
 Ask: what are the support hours? The answer is the sentence in the sample: support hours are weekdays 9 to 5. Your own PDFs are the same steps. They are not part of the card.
