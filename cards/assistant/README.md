@@ -8,22 +8,21 @@ Asking questions of your own documents usually means handing those files to some
 
 Both apps are the place `desk`, so they stay on one serving device. `assistant` is Open WebUI on port `8088`, behind an org login. `ollama` is the chat model and the embedding model on port `11434`, behind an API key. Open WebUI calls Ollama on the machine, not through the public hostname. The document index stays inside Open WebUI.
 
-Port `8088` is the host port. The website card already uses `8080` for nginx. There is no upstream Compose file that publishes both this way, so `docker-compose.yml` sits next to this card. The sample document is [sample-help.pdf](sample-help.pdf). The card is [card.yml](card.yml).
+Port `8088` is the host port. The website card already uses `8080` for nginx. The card starts from the Compose file Open WebUI publishes. The sample document is [sample-help.pdf](sample-help.pdf). The card is [card.yml](card.yml).
 
 ## How
 
-Nothing on the card needs editing, so there is no `tailor.sh`. On the machine that will run the containers:
+The card lists the edits. [tailor.sh](tailor.sh) applies that list. The script does not contain a device name, a hostname, or a password. It exits if an expected edit is not in the file afterwards. Running it again is safe. On the machine that will run the containers:
 
 ```bash
 mkdir -p ~/assistant
-curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/docker-compose.yml -o ~/assistant/docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/open-webui/open-webui/main/docker-compose.yaml -o ~/assistant/docker-compose.yaml
 curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/sample-help.pdf -o ~/assistant/sample-help.pdf
-docker compose -f ~/assistant/docker-compose.yml up -d
-docker exec ollama ollama pull qwen2.5:7b
-docker exec ollama ollama pull nomic-embed-text
+curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/tailor.sh -o ~/assistant-tailor.sh
+bash ~/assistant-tailor.sh ~/assistant
 ```
 
-`qwen2.5:7b` is the chat model. `nomic-embed-text` is the embedding model. The pulls are large and stay on this machine.
+After the containers are up, pull `qwen2.5:7b` and `nomic-embed-text`. `qwen2.5:7b` is the chat model. `nomic-embed-text` is the embedding model. The pulls are large and stay on this machine.
 
 Open the assistant after it is published. Sign in with `org`, then create the Open WebUI admin on the first visit. In **Admin Settings**, then **Documents**, set the embedding engine to Ollama and the model to `nomic-embed-text`. In **Workspace**, then **Knowledge**, create a collection and upload `sample-help.pdf`. Wait until processing finishes. Attach that collection to the chat model under **Workspace**, then **Models**.
 

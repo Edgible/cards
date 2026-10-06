@@ -15,7 +15,11 @@ applications:
     authModes: [org]
     place: desk
     resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/docker-compose.yml
+      compose: https://raw.githubusercontent.com/open-webui/open-webui/main/docker-compose.yaml
+      changes:
+        - Drop the build block so Compose pulls the published image
+        - Bind the chat UI to 127.0.0.1:8088
+        - Publish Ollama on 127.0.0.1:11434
 
   - name: ollama
     what: chat and embedding models
@@ -27,4 +31,8 @@ applications:
     authModes: [api-key]
     place: desk
     resources:
-      compose: https://raw.githubusercontent.com/Edgible/cards/main/cards/assistant/docker-compose.yml
+      compose: https://raw.githubusercontent.com/open-webui/open-webui/main/docker-compose.yaml
+      changes:
+        - Drop the build block so Compose pulls the published image
+        - Bind the chat UI to 127.0.0.1:8088
+        - Publish Ollama on 127.0.0.1:11434
