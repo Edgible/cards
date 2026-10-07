@@ -1,6 +1,6 @@
 # cards
 
-Edgible Cards
+Edgible cards let a deployment pattern be shared and reproduced. A card records the programs, the images, the ports, the auth mode on each hostname, and which apps share a serving device. Someone else fetches that card, edits `card.env`, starts the containers, and publishes the apps. The card leaves out device names, hostnames, and the organization id, so the next person maps each place to a serving device they have.
 
 `cards/` holds the cards. A directory under `cards/` that contains `card.yml` is one card. The README in that directory is how you fetch the card, edit `card.env`, start the containers, and publish. [tools/card.schema.json](tools/card.schema.json) is the source of truth for `card.yml`. [tools/card-image.py](tools/card-image.py) writes `images/card-light.svg` and `images/card-dark.svg` from the same file.
 
