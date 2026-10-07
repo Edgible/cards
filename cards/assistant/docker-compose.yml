@@ -10,12 +10,12 @@ services:
     pull_policy: always
     tty: true
     restart: unless-stopped
-    image: ollama/ollama:${OLLAMA_DOCKER_TAG-latest}
+    image: ollama/ollama:latest
     ports:
       - "127.0.0.1:${OLLAMA_PORT:?set OLLAMA_PORT in card.env}:11434"
 
   open-webui:
-    image: ghcr.io/open-webui/open-webui:${WEBUI_DOCKER_TAG-main}
+    image: ghcr.io/open-webui/open-webui:latest
     container_name: open-webui
     volumes:
       - open-webui:/app/backend/data

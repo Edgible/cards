@@ -7,7 +7,7 @@ metadata:
 applications:
   - name: assistant
     what: chat over your documents
-    from: ghcr.io/open-webui/open-webui:main
+    from: ghcr.io/open-webui/open-webui:latest
     port: 8088
     protocol: https
     subtype: existing
