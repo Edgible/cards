@@ -72,4 +72,12 @@ edgible app create existing \
 edgible app list
 ```
 
-`edgible app list` shows `n8n` with `org` and `n8n-hooks` with `none`. The editor hostname asks for an org login. The webhook hostname is open.
+`edgible app list` shows `n8n` with `org` and `n8n-hooks` with `none`.
+
+## Getting Started
+
+`edgible app list` prints each hostname.
+
+`n8n` uses `org`. Open that hostname and sign in. The owner is the account you created on `127.0.0.1:5678`. Workflows are n8n's own setup.
+
+`n8n-hooks` uses `none`. A request to that hostname is not an org login page.

@@ -105,4 +105,12 @@ edgible app create existing \
 edgible app list
 ```
 
-`edgible app list` shows `site` and `analytics` with `none`, and `umami` and `status` with `org`. Open the site hostname and you see the sample page. Open the umami hostname, sign in with `org`, and create the Umami admin on the first visit. Open the status hostname, sign in with `org`, and create the Uptime Kuma admin on the first visit.
+`edgible app list` shows `site` and `analytics` with `none`, and `umami` and `status` with `org`.
+
+## Getting Started
+
+`edgible app list` prints each hostname.
+
+`site` and `analytics` use `none`. Open the site hostname. You should see the sample page.
+
+`umami` and `status` use `org`. Open each hostname, sign in, and create that app's admin on the first visit. The rest is in Umami and Uptime Kuma.

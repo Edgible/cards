@@ -79,6 +79,22 @@ edgible app create existing \
 edgible app list
 ```
 
-`edgible app list` shows `assistant` with `org` and `ollama` with `api-key`. Open the assistant hostname. Sign in with `org`, then create the Open WebUI admin on the first visit. In **Admin Settings**, then **Documents**, set the embedding engine to Ollama and the model to `nomic-embed-text`. In **Workspace**, then **Knowledge**, create a collection and upload `sample-help.pdf`. Wait until processing finishes. Attach that collection to the chat model under **Workspace**, then **Models**.
+`edgible app list` shows `assistant` with `org` and `ollama` with `api-key`.
 
-Ask: what are the support hours? The answer is the sentence in the sample: support hours are weekdays 9 to 5. Your own PDFs are the same steps. They are not part of the card.
+## Getting Started
+
+`edgible app list` prints each hostname.
+
+`assistant` uses `org`. Open that hostname and sign in. The first visit creates the Open WebUI admin. The rest of the setup is in Open WebUI. Upload `sample-help.pdf` and ask what the support hours are. The answer is weekdays 9 to 5.
+
+`ollama` uses `api-key`. Create a key. The secret is shown once. The app id is the one `edgible app list` prints for `ollama`.
+
+```bash
+edgible app api-keys create --app-id <ollama-app-id> --name caller
+```
+
+```bash
+curl -fsS "https://<hostname>/api/tags" -H "Authorization: Bearer <secret>"
+```
+
+A list of models means the hostname accepted the key.
