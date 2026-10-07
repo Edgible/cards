@@ -60,6 +60,7 @@ When both places are the same machine, run that command in the same directory. T
 `jq` reads each device's id out of `edgible device list`.
 
 ```bash
+set -euo pipefail
 set -a
 . ~/website/card.env
 set +a
@@ -67,7 +68,7 @@ device_id() {
   edgible device list --json | jq -er --arg name "$1" '
     map(select(.name == $name))
     | if length == 1 then .[0].id
-      else error("need exactly one device named " + $name)
+      else error("need exactly one device named " + $name + " (" + (map(.status + " " + .id) | join(", ")) + ")")
       end
   '
 }

@@ -45,13 +45,14 @@ Open `http://127.0.0.1:5678` and create the n8n owner. This account stays on thi
 `jq` reads that device's id out of `edgible device list`.
 
 ```bash
+set -euo pipefail
 set -a
 . ~/n8n/card.env
 set +a
 device_id=$(edgible device list --json | jq -er --arg name "$DEVICE" '
   map(select(.name == $name))
   | if length == 1 then .[0].id
-    else error("need exactly one device named " + $name)
+    else error("need exactly one device named " + $name + " (" + (map(.status + " " + .id) | join(", ")) + ")")
     end
 ')
 edgible app create existing \
