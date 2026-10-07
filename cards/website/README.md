@@ -6,9 +6,9 @@ A site, the editor for its pages, the count of who read it, and a check that it 
 
 ## What
 
-`site` is a React app, open to anyone. It reads pages from Strapi on the Compose network. `strapi` is the editor behind an org login, and it needs Postgres. The content API is not published. `analytics` is the Umami tracking script, also open. `umami` is that same process with its dashboard behind an org login, and it needs its own Postgres. Those four share the place `web`, so they run on one serving device. `status` is Uptime Kuma behind an org login, on the place `monitor`, which can be a second serving device. A monitor on the same machine as the site cannot report that machine going down.
+`site` is a Vite React app, open to anyone. nginx serves the static build. The sample page is in those files, so the same build can be uploaded to S3. On this card, nginx forwards `/api` to Strapi, and a reload shows an edit from the editor. `strapi` is the editor behind an org login, and it needs Postgres. The editor stays on its own hostname. `analytics` is the Umami tracking script, also open. `umami` is that same process with its dashboard behind an org login, and it needs its own Postgres. Those four share the place `web`, so they run on one serving device. `status` is Uptime Kuma behind an org login, on the place `monitor`, which can be a second serving device. A monitor on the same machine as the site cannot report that machine going down.
 
-The Compose files are [docker-compose.yml](docker-compose.yml), [umami-compose.yml](umami-compose.yml), and [kuma-compose.yml](kuma-compose.yml). They read the host ports and the secrets from [card.env](card.env). The React app is [site](site). The Strapi project is [strapi](strapi). The card is [card.yml](card.yml).
+The Compose files are [docker-compose.yml](docker-compose.yml), [umami-compose.yml](umami-compose.yml), and [kuma-compose.yml](kuma-compose.yml). They read the host ports and the secrets from [card.env](card.env). The Vite app is [site](site). The Strapi project is [strapi](strapi). The card is [card.yml](card.yml).
 
 ## How
 
@@ -34,7 +34,7 @@ nano website/card.env
 
 ### 3. Start the site and Umami
 
-Place `web` runs these two Compose files. The React and Strapi images are built from this card.
+Place `web` runs these two Compose files. The Vite site and Strapi images are built from this card.
 
 ```bash
 docker compose --project-name site --env-file website/card.env -f website/docker-compose.yml up -d --build
