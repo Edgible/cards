@@ -16,18 +16,6 @@ Runs that check. With no arguments it checks every `cards/<name>/card.yml`. `met
 python3 tools/check-cards.py
 ```
 
-## card-to-stack.py
-
-Writes a stack file that `edgible stack deploy` accepts. You pass the card and the serving device. The script fills in that device name and the organization id from `edgible config get organizationId`. Auth mode `org` on the card is written `edgible-login` in the stack file.
-
-It does not start containers. The process must already be listening. This is the stand-in for a later `edgible stack export --card`.
-
-```bash
-python3 tools/card-to-stack.py cards/website/card.yml --device minipc > website.stack.yml
-```
-
-One device name applies to every app. `--device web=minipc --device monitor=otherbox` maps each place to a serving device.
-
 ## card-image.py
 
 Writes `images/card-light.svg` and `images/card-dark.svg` for a card. The picture lists the apps, ports, auth modes, and places. It draws no caller, no hostname, and no machine. The words come from the card. If a `what` line does not fit the row, the command fails and you shorten that line.
