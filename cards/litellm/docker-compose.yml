@@ -1,0 +1,50 @@
+# Author-supplied Compose file for the litellm card.
+# Secrets and the host port come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: litellm-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in card.env}
+      POSTGRES_DB: litellm
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  litellm:
+    image: docker.litellm.ai/berriai/litellm:main-stable
+    container_name: litellm
+    restart: unless-stopped
+    command: ["--config", "/app/config.yaml"]
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY in card.env}
+      LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:?set LITELLM_SALT_KEY in card.env}
+      DATABASE_URL: postgresql://litellm:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in card.env}@db:5432/litellm
+      STORE_MODEL_IN_DB: "True"
+    ports:
+      - "127.0.0.1:${LITELLM_PORT:?set LITELLM_PORT in card.env}:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+
+volumes:
+  ollama: {}
+  postgres_data: {}

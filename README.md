@@ -7,6 +7,7 @@ Edgible Cards
 - [website](cards/website/README.md)
 - [n8n](cards/n8n/README.md)
 - [assistant](cards/assistant/README.md)
+- [litellm](cards/litellm/README.md)
 
 What each file in `tools/` does is [tools/README.md](tools/README.md).
 
