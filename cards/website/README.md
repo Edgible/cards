@@ -2,13 +2,13 @@
 
 ## Why
 
-A site, the count of who read it, and a check that it is still up are usually three services someone else runs. This card keeps all three on machines you own. Strangers can open the site and the tracking script. The dashboard and the monitor ask for an org login.
+A site, the editor for its pages, the count of who read it, and a check that it is still up are usually services someone else runs. This card keeps them on machines you own. Strangers can open the site and the tracking script. The editor, the dashboard, and the monitor ask for an org login.
 
 ## What
 
-`site` is nginx serving your files, open to anyone. `analytics` is the Umami tracking script, also open. `umami` is that same process with its dashboard behind an org login, and it needs Postgres. Those three share the place `web`, so they run on one serving device. `status` is Uptime Kuma behind an org login, on the place `monitor`, which can be a second serving device. A monitor on the same machine as the site cannot report that machine going down.
+`site` is a React app, open to anyone. It reads pages from Strapi on the Compose network. `strapi` is the editor behind an org login, and it needs Postgres. The content API is not published. `analytics` is the Umami tracking script, also open. `umami` is that same process with its dashboard behind an org login, and it needs its own Postgres. Those four share the place `web`, so they run on one serving device. `status` is Uptime Kuma behind an org login, on the place `monitor`, which can be a second serving device. A monitor on the same machine as the site cannot report that machine going down.
 
-The Compose files are [docker-compose.yml](docker-compose.yml), [umami-compose.yml](umami-compose.yml), and [kuma-compose.yml](kuma-compose.yml). They read the host ports and the Umami secrets from [card.env](card.env). The sample page is [etc/index.html](etc/index.html). The card is [card.yml](card.yml).
+The Compose files are [docker-compose.yml](docker-compose.yml), [umami-compose.yml](umami-compose.yml), and [kuma-compose.yml](kuma-compose.yml). They read the host ports and the secrets from [card.env](card.env). The React app is [site](site). The Strapi project is [strapi](strapi). The card is [card.yml](card.yml).
 
 ## How
 
@@ -34,14 +34,10 @@ nano website/card.env
 
 ### 3. Start the site and Umami
 
-An existing `website/public/index.html` is left as it is. Place `web` runs these two Compose files.
+Place `web` runs these two Compose files. The React and Strapi images are built from this card.
 
 ```bash
-mkdir -p website/public
-if [ ! -f website/public/index.html ]; then
-  cp website/etc/index.html website/public/index.html
-fi
-docker compose --project-name site --env-file website/card.env -f website/docker-compose.yml up -d
+docker compose --project-name site --env-file website/card.env -f website/docker-compose.yml up -d --build
 docker compose --project-name umami --env-file website/card.env -f website/umami-compose.yml up -d
 ```
 
@@ -83,6 +79,13 @@ edgible app create existing \
   --device-id "$web_id"
 edgible app create existing \
   --non-interactive \
+  --name strapi \
+  --port "$STRAPI_PORT" \
+  --protocol https \
+  --auth-modes org \
+  --device-id "$web_id"
+edgible app create existing \
+  --non-interactive \
   --name analytics \
   --port "$UMAMI_PORT" \
   --protocol https \
@@ -105,17 +108,19 @@ edgible app create existing \
 edgible app list
 ```
 
-`edgible app list` shows `site` and `analytics` with `none`, and `umami` and `status` with `org`.
+`edgible app list` shows `site` and `analytics` with `none`, and `strapi`, `umami`, and `status` with `org`.
 
 ## Getting Started
 
 `edgible app list` prints each hostname.
 
-`site` uses `none`. The page contains `Served from a box I own.`
+`site` uses `none`. The page contains `Served from a box I own.` That sentence is the sample Page in Strapi. Edit it in the editor and reload the site.
 
 ```bash
 curl -fsS "https://<hostname>"
 ```
+
+`strapi` uses `org`. Open that hostname and sign in. The first visit creates the Strapi admin. The rest of the setup is in Strapi.
 
 `analytics` uses `none`. The tracker script comes back, not an org login page.
 

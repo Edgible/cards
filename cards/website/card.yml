@@ -2,17 +2,28 @@ apiVersion: v1
 kind: Card
 metadata:
   name: website
-  description: Public site, open tracker, locked dashboard, locked monitor
+  description: Public React site, its editor, open tracker, locked dashboard, locked monitor
 
 applications:
   - name: site
-    what: your static files, served by nginx
-    from: nginx:alpine
+    what: your pages, served by React
+    from: website-site:latest
     port: 8080
     protocol: https
     subtype: existing
     published: true
     authModes: [none]
+    place: web
+
+  - name: strapi
+    what: Strapi editor
+    from: website-strapi:latest
+    database: postgres:16-alpine
+    port: 1337
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [org]
     place: web
 
   - name: analytics

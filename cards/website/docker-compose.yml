@@ -1,13 +1,78 @@
 # Site Compose file for the website card.
-# The host port comes from card.env. Start with:
-#   docker compose --project-name site --env-file card.env -f docker-compose.yml up -d
+# The React app and Strapi share this file so the site can read Strapi on the
+# Compose network. Ports and secrets come from card.env. Start with:
+#   docker compose --project-name site --env-file card.env -f docker-compose.yml up -d --build
 
 services:
   site:
-    image: nginx:alpine
+    build: ./site
+    image: website-site:latest
     container_name: site
     restart: unless-stopped
+    environment:
+      STRAPI_URL: http://strapi:1337
     ports:
-      - "127.0.0.1:${SITE_PORT:?set SITE_PORT in card.env}:80"
+      - "127.0.0.1:${SITE_PORT:?set SITE_PORT in card.env}:3000"
+    depends_on:
+      strapi:
+        condition: service_healthy
+
+  strapi:
+    build: ./strapi
+    image: website-strapi:latest
+    container_name: strapi
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 1337
+      NODE_ENV: production
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: strapi-db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: ${STRAPI_DATABASE_PASSWORD:?set STRAPI_DATABASE_PASSWORD in card.env}
+      APP_KEYS: ${APP_KEYS:?set APP_KEYS in card.env}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:?set API_TOKEN_SALT in card.env}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?set ADMIN_JWT_SECRET in card.env}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:?set TRANSFER_TOKEN_SALT in card.env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in card.env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in card.env}
+    ports:
+      - "127.0.0.1:${STRAPI_PORT:?set STRAPI_PORT in card.env}:1337"
     volumes:
-      - ./public:/usr/share/nginx/html:ro
+      - strapi-uploads:/opt/app/public/uploads
+    depends_on:
+      strapi-db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:1337/_health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  strapi-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: ${STRAPI_DATABASE_PASSWORD:?set STRAPI_DATABASE_PASSWORD in card.env}
+      POSTGRES_DB: strapi
+    volumes:
+      - strapi-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strapi -d strapi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  strapi-data: {}
+  strapi-uploads: {}
