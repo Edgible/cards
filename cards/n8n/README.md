@@ -78,6 +78,10 @@ edgible app list
 
 `edgible app list` prints each hostname.
 
-`n8n` uses `org`. Open that hostname and sign in. The owner is the account you created on `127.0.0.1:5678`. Workflows are n8n's own setup.
+`n8n` uses `org`. Open that hostname and sign in. The owner is the account you created on `127.0.0.1:5678`. The rest of the setup is in n8n.
 
-`n8n-hooks` uses `none`. A request to that hostname is not an org login page.
+`n8n-hooks` uses `none`. The response is n8n, not an org login page.
+
+```bash
+curl -fsS "https://<hostname>"
+```

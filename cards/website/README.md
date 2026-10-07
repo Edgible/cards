@@ -111,6 +111,18 @@ edgible app list
 
 `edgible app list` prints each hostname.
 
-`site` and `analytics` use `none`. Open the site hostname. You should see the sample page.
+`site` uses `none`. The page contains `Served from a box I own.`
 
-`umami` and `status` use `org`. Open each hostname, sign in, and create that app's admin on the first visit. The rest is in Umami and Uptime Kuma.
+```bash
+curl -fsS "https://<hostname>"
+```
+
+`analytics` uses `none`. The tracker script comes back, not an org login page.
+
+```bash
+curl -fsS "https://<hostname>/script.js"
+```
+
+`umami` uses `org`. Open that hostname and sign in. The first visit creates the Umami admin. The rest of the setup is in Umami.
+
+`status` uses `org`. Open that hostname and sign in. The first visit creates the Uptime Kuma admin. The rest of the setup is in Uptime Kuma.
