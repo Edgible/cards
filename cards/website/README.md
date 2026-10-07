@@ -16,33 +16,33 @@ Five steps. Edit [card.env](card.env) before you start. The Compose files read t
 
 ### 1. Fetch
 
-On the machine that will run the containers, fetch this card:
+On the machine that will run the containers, fetch this card. Running this again replaces `card.env`, including the device name and any password you filled in.
 
 ```bash
-mkdir -p ~/website
+mkdir -p website
 curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
-  | tar -xz --strip-components=3 -C ~/website cards-main/cards/website
+  | tar -xz --strip-components=3 -C website cards-main/cards/website
 ```
 
 ### 2. Edit card.env
 
-Open `~/website/card.env` and follow the comments in that file.
+Open `website/card.env` and follow the comments in that file.
 
 ```bash
-nano ~/website/card.env
+nano website/card.env
 ```
 
 ### 3. Start the site and Umami
 
-An existing `~/website/public/index.html` is left as it is. Place `web` runs these two Compose files.
+An existing `website/public/index.html` is left as it is. Place `web` runs these two Compose files.
 
 ```bash
-mkdir -p ~/website/public
-if [ ! -f ~/website/public/index.html ]; then
-  cp ~/website/etc/index.html ~/website/public/index.html
+mkdir -p website/public
+if [ ! -f website/public/index.html ]; then
+  cp website/etc/index.html website/public/index.html
 fi
-docker compose --project-name site --env-file ~/website/card.env -f ~/website/docker-compose.yml up -d
-docker compose --project-name umami --env-file ~/website/card.env -f ~/website/umami-compose.yml up -d
+docker compose --project-name site --env-file website/card.env -f website/docker-compose.yml up -d
+docker compose --project-name umami --env-file website/card.env -f website/umami-compose.yml up -d
 ```
 
 ### 4. Start the monitor
@@ -50,7 +50,7 @@ docker compose --project-name umami --env-file ~/website/card.env -f ~/website/u
 On the machine for place `monitor`, fetch this card the same way and edit `card.env` there. Then:
 
 ```bash
-docker compose --project-name status --env-file ~/website/card.env -f ~/website/kuma-compose.yml up -d
+docker compose --project-name status --env-file website/card.env -f website/kuma-compose.yml up -d
 ```
 
 When both places are the same machine, run that command in the same directory. That file reads `STATUS_PORT`.
@@ -62,7 +62,7 @@ When both places are the same machine, run that command in the same directory. T
 ```bash
 set -euo pipefail
 set -a
-. ~/website/card.env
+. website/card.env
 set +a
 device_id() {
   edgible device list --json | jq -er --arg name "$1" '

@@ -2,7 +2,7 @@
 
 Edgible Cards
 
-`cards/` holds the patterns. `tools/` holds the schema and the scripts. A directory under `cards/` that contains `card.yml` is one card. [tools/card.schema.json](tools/card.schema.json) is the source of truth for that file. [tools/card-to-stack.py](tools/card-to-stack.py) writes a stack file from a card. [tools/card-image.py](tools/card-image.py) writes `images/card-light.svg` and `images/card-dark.svg` from the same file.
+`cards/` holds the cards. A directory under `cards/` that contains `card.yml` is one card. The README in that directory is how you fetch the card, edit `card.env`, start the containers, and publish. [tools/card.schema.json](tools/card.schema.json) is the source of truth for `card.yml`. [tools/card-image.py](tools/card-image.py) writes `images/card-light.svg` and `images/card-dark.svg` from the same file.
 
 - [website](cards/website/README.md)
 - [n8n](cards/n8n/README.md)

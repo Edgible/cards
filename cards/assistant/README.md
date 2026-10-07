@@ -16,7 +16,7 @@ Five steps. Edit [card.env](card.env) before you start. [docker-compose.yml](doc
 
 ### 1. Fetch
 
-On the machine that will run the containers, fetch this card:
+On the machine that will run the containers, fetch this card. Running this again replaces `card.env`, including the device name and any password you filled in.
 
 ```bash
 mkdir -p assistant

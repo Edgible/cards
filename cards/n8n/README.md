@@ -14,26 +14,26 @@ Five steps. Edit [card.env](card.env) before you start. [docker-compose.yml](doc
 
 ### 1. Fetch
 
-On the machine that will run the containers, fetch this card:
+On the machine that will run the containers, fetch this card. Running this again replaces `card.env`, including the device name and any password you filled in.
 
 ```bash
-mkdir -p ~/n8n
+mkdir -p n8n
 curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
-  | tar -xz --strip-components=3 -C ~/n8n cards-main/cards/n8n
+  | tar -xz --strip-components=3 -C n8n cards-main/cards/n8n
 ```
 
 ### 2. Edit card.env
 
-Open `~/n8n/card.env` and follow the comments in that file.
+Open `n8n/card.env` and follow the comments in that file.
 
 ```bash
-nano ~/n8n/card.env
+nano n8n/card.env
 ```
 
 ### 3. Start
 
 ```bash
-docker compose --env-file ~/n8n/card.env -f ~/n8n/docker-compose.yml up -d
+docker compose --env-file n8n/card.env -f n8n/docker-compose.yml up -d
 ```
 
 ### 4. Create the owner
@@ -47,7 +47,7 @@ Open `http://127.0.0.1:5678` and create the n8n owner. This account stays on thi
 ```bash
 set -euo pipefail
 set -a
-. ~/n8n/card.env
+. n8n/card.env
 set +a
 device_id=$(edgible device list --json | jq -er --arg name "$DEVICE" '
   map(select(.name == $name))
