@@ -16,6 +16,13 @@ that do not match, and Edgible applications with the same name. Each conflict
 prints a remedy. A container, project, or volume from the same Compose file is
 this card already running, and is not a conflict.
 
+The report ends with the remedies as lines to paste into a shell. Edits to
+card.env and restarts run as they are. A line that stops or deletes something
+starts with #, so it runs only when you remove that #. With --commands, only
+those lines are printed:
+
+    python3 check-env.py website --commands > fix.sh
+
 Only the standard library. Exit 0 when nothing conflicts, 1 when something
 does, 2 when the check cannot run.
 """
@@ -26,6 +33,7 @@ import argparse
 import errno
 import json
 import re
+import shlex
 import shutil
 import socket
 import subprocess
@@ -37,33 +45,119 @@ PORT_VAR = re.compile(r"\$\{([A-Z][A-Z0-9_]*)[^}]*\}:\d+")
 DEVICE_VAR = re.compile(r"^(?:[A-Z0-9_]+_)?DEVICE$")
 TOP_NAME = re.compile(r"^name:\s*\S", re.MULTILINE)
 PUBLISHED = re.compile(r"(?:^|:)(\d+)->\d+/(?:tcp|udp)")
+GENERATE = re.compile(r"Generate (?:each |(two) values )?with: (.+)$")
+
+
+class Edit:
+    """Set a line in card.env. shell is a value the shell makes, such as $(openssl rand -hex 16)."""
+
+    def __init__(self, var: str, why: str, value: str = "", shell: str = "") -> None:
+        self.var = var
+        self.why = why
+        self.value = value
+        self.shell = shell
+
+    def __str__(self) -> str:
+        return f"set {self.var}={self.shell or self.value} in card.env"
+
+    def sed(self) -> str:
+        if self.shell:
+            return f'"s|^{self.var}=.*|{self.var}={self.shell}|"'
+        return shlex.quote(f"s|^{self.var}=.*|{self.var}={self.value}|")
+
+
+class Cmd:
+    """A shell command. safe is False when it stops or deletes something."""
+
+    def __init__(self, text: str, cmd: str, safe: bool = True) -> None:
+        self.text = text
+        self.cmd = cmd
+        self.safe = safe
+
+    def __str__(self) -> str:
+        return f"{self.text}: {self.cmd}"
 
 
 class Report:
-    def __init__(self) -> None:
+    def __init__(self, quiet: bool = False) -> None:
         self.conflicts = 0
         self.warnings = 0
+        self.quiet = quiet
+        self.findings: list[tuple[str, tuple]] = []
+
+    def say(self, text: str) -> None:
+        if not self.quiet:
+            print(text)
 
     def section(self, title: str) -> None:
-        print(f"\n{title}")
+        self.say(f"\n{title}")
 
     def ok(self, text: str) -> None:
-        print(f"  ok        {text}")
+        self.say(f"  ok        {text}")
 
-    def warn(self, text: str, *remedies: str) -> None:
+    def warn(self, text: str, *remedies) -> None:
         self.warnings += 1
-        print(f"  warning   {text}")
-        for remedy in remedies:
-            print(f"            -> {remedy}")
+        self.finding("warning", text, remedies)
 
-    def conflict(self, text: str, *remedies: str) -> None:
+    def conflict(self, text: str, *remedies) -> None:
         self.conflicts += 1
-        print(f"  conflict  {text}")
+        self.finding("conflict", text, remedies)
+
+    def finding(self, kind: str, text: str, remedies: tuple) -> None:
+        self.findings.append((text, remedies))
+        self.say(f"  {kind:<9} {text}")
         for remedy in remedies:
-            print(f"            -> {remedy}")
+            self.say(f"            -> {remedy}")
 
     def skip(self, text: str) -> None:
-        print(f"  skipped   {text}")
+        self.say(f"  skipped   {text}")
+
+    def commands(self, env_file: Path, rerun: str) -> list[str]:
+        """The remedies as shell lines. One sed makes every card.env edit, so .bak is the file before them."""
+        edits = [
+            (text, r) for text, remedies in self.findings for r in remedies if isinstance(r, Edit)
+        ]
+        lines = [
+            "# Paste these lines into a shell on this machine.",
+            "# A line that starts with # stops or deletes something. Read it, and remove the # to run it.",
+        ]
+        if edits:
+            lines += ["", f"# Edit {env_file.name}. {env_file.name}.bak keeps the copy from before."]
+            lines += [f"#   {r.var}: {r.why}" for _, r in edits]
+            lines.append("sed -i.bak \\")
+            lines += [f"  -e {r.sed()} \\" for _, r in edits]
+            lines.append(f"  {shlex.quote(str(env_file))}")
+        seen: set[str] = set()
+        for text, remedies in self.findings:
+            if not any(isinstance(r, Cmd) for r in remedies):
+                continue
+            lines += ["", f"# {text}"]
+            # The first safe command runs, unless a card.env edit above already fixes this.
+            active = any(isinstance(r, Edit) for r in remedies)
+            for r in remedies:
+                if isinstance(r, str):
+                    lines.append(f"# {r}")
+                elif isinstance(r, Cmd) and r.cmd in seen:
+                    lines.append(f"# {r.text}: same command as above")
+                elif isinstance(r, Cmd):
+                    seen.add(r.cmd)
+                    if r.safe and not active:
+                        lines += [f"# {r.text}", r.cmd]
+                        active = True
+                    else:
+                        lines.append(f"# {r.text}: {r.cmd}")
+        by_hand = [
+            (text, [r for r in remedies if isinstance(r, str)])
+            for text, remedies in self.findings
+            if not any(isinstance(r, (Edit, Cmd)) for r in remedies)
+        ]
+        if by_hand:
+            lines += ["", "# Still to do by hand:"]
+            for text, advice in by_hand:
+                lines.append(f"#   {text}")
+                lines += [f"#     {a}" for a in advice]
+        lines += ["", "# Check again.", rerun]
+        return lines
 
 
 def run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
@@ -79,6 +173,25 @@ def read_env(path: Path) -> dict[str, str]:
         key, value = line.split("=", 1)
         env[key.strip()] = value.strip().strip("'\"")
     return env
+
+
+def generators(path: Path) -> dict[str, str]:
+    """A shell value for each card.env line whose comment says how to make it, such as
+    `# Generate with: openssl rand -hex 16`. A blank line ends that comment."""
+    found: dict[str, str] = {}
+    value = ""
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            value = ""
+        elif line.startswith("#"):
+            match = GENERATE.search(line)
+            if match:
+                one = f"$({match.group(2).strip()})"
+                value = f"{one},{one}" if match.group(1) else one
+        elif "=" in line and value:
+            found[line.split("=", 1)[0].strip()] = value
+    return found
 
 
 def read_apps(card_yml: Path) -> list[dict[str, str]]:
@@ -151,9 +264,23 @@ def docker_containers() -> tuple[list[dict], str]:
         )
         row["Project"] = labels.get("com.docker.compose.project", "")
         row["Service"] = labels.get("com.docker.compose.service", "")
-        row["HostPorts"] = {int(p) for p in PUBLISHED.findall(row.get("Ports", ""))}
+        # A stopped container still lists the ports it would publish, but holds none.
+        holds = row.get("State") in ("running", "restarting", "paused")
+        row["HostPorts"] = {int(p) for p in PUBLISHED.findall(row.get("Ports", ""))} if holds else set()
         containers.append(row)
     return containers, error
+
+
+def edgible_lists() -> tuple[list | None, dict, str]:
+    """Devices and apps from the logged-in CLI, or None and the reason it could not list them."""
+    if not shutil.which("edgible"):
+        return None, {}, "edgible is not installed; the device and app name checks need it"
+    devices_out = run(["edgible", "device", "list", "--json"])
+    apps_out = run(["edgible", "app", "list", "--json"])
+    if devices_out.returncode != 0 or apps_out.returncode != 0:
+        return None, {}, "edgible could not list devices and apps; run `edgible login`"
+    apps = {a["name"]: a for a in json.loads(apps_out.stdout)}
+    return json.loads(devices_out.stdout), apps, ""
 
 
 def compose_config(compose: Path, env_file: Path) -> tuple[dict | None, str]:
@@ -189,6 +316,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--env-file", type=Path, help="defaults to card.env in the card directory"
     )
+    parser.add_argument(
+        "--commands", action="store_true",
+        help="print only the remedies, as lines to paste into a shell",
+    )
     args = parser.parse_args(argv)
 
     card = args.card.resolve()
@@ -212,8 +343,9 @@ def main(argv: list[str]) -> int:
 
     env = read_env(env_file)
     apps = read_apps(card_yml)
-    report = Report()
-    print(f"card {card.name}, settings {env_file}")
+    report = Report(quiet=args.commands)
+    report.say(f"card {card.name}, settings {env_file}")
+    generate = generators(env_file)
 
     # Resolve every file first. A missing value stops the rest for that file.
     report.section("card.env")
@@ -223,9 +355,17 @@ def main(argv: list[str]) -> int:
         required = dict.fromkeys(REQUIRED_VAR.findall(compose.read_text()))
         empty = [var for var in required if not env.get(var)]
         if empty:
+            made = [var for var in empty if var in generate]
+            by_hand = [var for var in empty if var not in generate]
             report.conflict(
                 f"{compose.name} needs a value for {', '.join(empty)}",
-                f"fill each in {env_file.name}; its comment says how to make one",
+                *[Edit(var, "empty; a new value, made the way its comment says", shell=generate[var])
+                  for var in made],
+                *(
+                    [f"fill {', '.join(by_hand)} in {env_file.name} by hand; "
+                     "its comment says what goes there"]
+                    if by_hand else []
+                ),
             )
             continue
         config, error = compose_config(compose, env_file)
@@ -235,11 +375,15 @@ def main(argv: list[str]) -> int:
             continue
         resolved.append((compose, config))
         report.ok(f"{compose.name} resolves")
+    devices, existing_apps, edgible_note = edgible_lists()
+    device_names = ", ".join(sorted(d["name"] for d in devices or [])) or "none"
     for key, value in env.items():
         if DEVICE_VAR.match(key) and not value:
             report.conflict(
                 f"{key} is empty",
-                f"set {key} to a name that `edgible device list` prints",
+                f"set {key} to one of: {device_names}"
+                if devices is not None
+                else f"set {key} to a name that `edgible device list` prints",
             )
 
     containers, ps_error = docker_containers()
@@ -249,7 +393,7 @@ def main(argv: list[str]) -> int:
         report.warn(
             f"`docker ps -a` fails: {ps_error}",
             "the check listed containers one status at a time instead",
-            f"remove the damaged container: docker rm -f {damaged.group(1)}"
+            Cmd("remove the damaged container", f"docker rm -f {damaged.group(1)}", safe=False)
             if damaged
             else "restart Docker, then run this again",
         )
@@ -285,8 +429,9 @@ def main(argv: list[str]) -> int:
         if any(p.name == compose.name and p.parent.name == card.name for p in config_files):
             report.conflict(
                 f"{project} is running from another copy of this card: {others}",
-                f"start it from that directory instead, so it keeps its data",
-                f"or stop that copy first: docker compose -p {project} down (volumes stay)",
+                "start it from that directory instead, so it keeps its data",
+                Cmd("or stop that copy first (its volumes stay)",
+                    f"docker compose -p {shlex.quote(project)} down", safe=False),
             )
         else:
             report.conflict(
@@ -315,11 +460,14 @@ def main(argv: list[str]) -> int:
                 owner = f"project {other['Project']}" if other["Project"] else "no Compose project"
                 rename = f"or change container_name for {service} in {compose.name}"
                 if other["Project"] in projects:
-                    first = f"stop that project first: docker compose -p {other['Project']} down (volumes stay)"
+                    first = Cmd("stop that project first (its volumes stay)",
+                                f"docker compose -p {shlex.quote(other['Project'])} down", safe=False)
                 elif other["State"] == "running":
-                    first = f"stop and remove it if you no longer need it: docker rm -f {name}"
+                    first = Cmd("stop and remove it if you no longer need it",
+                                f"docker rm -f {shlex.quote(name)}", safe=False)
                 else:
-                    first = f"it is stopped; remove it if it is left over: docker rm {name}"
+                    first = Cmd("it is stopped; remove it if it is left over",
+                                f"docker rm {shlex.quote(name)}", safe=False)
                 report.conflict(
                     f"{name} is taken by a container from {owner} ({other['State']})",
                     first,
@@ -331,6 +479,7 @@ def main(argv: list[str]) -> int:
     # Host ports.
     report.section("Host ports")
     wanted: dict[int, list[str]] = {}
+    suggested: set[int] = set()
     for compose, config in resolved:
         project = config["name"]
         port_vars = PORT_VAR.findall(compose.read_text())
@@ -343,23 +492,25 @@ def main(argv: list[str]) -> int:
                 var = next((v for v in port_vars if env.get(v) == str(port)), None)
                 wanted.setdefault(port, []).append(f"{project}/{service}")
                 setting = f"{var}={port}" if var else f"port {port}"
-                taken = set(wanted) | {p for c in containers for p in c["HostPorts"]}
+                taken = set(wanted) | suggested | {p for c in containers for p in c["HostPorts"]}
                 remedy_port = next_free_port(port, taken, host)
                 change = (
-                    f"set {var}={remedy_port} in {env_file.name}"
+                    Edit(var, f"{port} is taken; {remedy_port} is free", value=str(remedy_port))
                     if var
                     else f"change the host port for {service} in {compose.name}"
                 )
                 users = [c for c in containers if port in c["HostPorts"]]
                 ours = [c for c in users if c["Project"] == project and project in own_projects]
                 theirs = [c for c in users if c not in ours]
+                if theirs or (not ours and not port_free(host, port)):
+                    suggested.add(remedy_port)
                 if theirs:
                     other = theirs[0]
                     owner = f" in project {other['Project']}" if other["Project"] else ""
                     report.conflict(
                         f"{setting} ({service}) is published by container {other['Names']}{owner}",
                         change,
-                        f"or stop that container: docker stop {other['Names']}",
+                        Cmd("or stop that container", f"docker stop {shlex.quote(other['Names'])}", safe=False),
                     )
                 elif ours:
                     report.ok(f"{setting} ({service}) is this card, already published")
@@ -381,7 +532,7 @@ def main(argv: list[str]) -> int:
                         report.warn(
                             f"{setting} ({service}) is free, but container {stale[0]['Names']} "
                             "is running without it; the published app cannot reach it",
-                            f"restart it: docker restart {stale[0]['Names']}",
+                            Cmd("restart it", f"docker restart {shlex.quote(stale[0]['Names'])}"),
                         )
                     else:
                         report.ok(f"{setting} ({service}) is free")
@@ -418,69 +569,72 @@ def main(argv: list[str]) -> int:
                     f"{name} is left from an earlier run; it is reused as it is, "
                     "including any database password it was made with",
                     "keep it if you want that data",
-                    f"to start empty, delete it and its data: docker volume rm {name}",
+                    Cmd("to start empty, delete it and its data", f"docker volume rm {shlex.quote(name)}", safe=False),
                 )
     if not found:
         report.ok("no named volumes")
 
     # Edgible: devices and application names.
     report.section("Edgible")
-    if not shutil.which("edgible"):
-        report.skip("edgible is not installed; the device and app name checks need it")
+    if devices is None:
+        report.skip(edgible_note)
     else:
-        devices_out = run(["edgible", "device", "list", "--json"])
-        apps_out = run(["edgible", "app", "list", "--json"])
-        if devices_out.returncode != 0 or apps_out.returncode != 0:
-            report.skip("edgible could not list devices and apps; run `edgible login`")
-        else:
-            devices = json.loads(devices_out.stdout)
-            existing_apps = {a["name"]: a for a in json.loads(apps_out.stdout)}
-            for key, value in env.items():
-                if not DEVICE_VAR.match(key) or not value:
-                    continue
-                matches = [d for d in devices if d["name"] == value]
-                if len(matches) == 1:
-                    report.ok(f"{key}={value} is device {matches[0]['id']} ({matches[0]['status']})")
-                elif not matches:
-                    names = ", ".join(sorted(d["name"] for d in devices)) or "none"
-                    report.conflict(
-                        f"{key}={value} matches no device",
-                        f"use one of: {names}",
-                    )
-                else:
-                    report.conflict(
-                        f"{key}={value} matches {len(matches)} devices",
-                        "rename one with `edgible device` so each name is unique",
-                    )
-            for app in apps:
-                other = existing_apps.get(app["name"])
-                if other is None:
-                    report.ok(f"app {app['name']} is free")
-                    continue
-                key = device_var(app.get("place", ""), env)
-                device = env.get(key, "") if key else ""
-                on = ", ".join(d["name"] for d in other.get("devices", [])) or "no device"
-                if device and device in on.split(", "):
-                    report.warn(
-                        f"app {app['name']} already exists on {device} ({other['status']}, "
-                        f"port {other.get('port')})",
-                        "if this card published it before, skip it in the Publish step",
-                        f"to publish it again: edgible app delete {app['name']}",
-                    )
-                else:
-                    report.conflict(
-                        f"app {app['name']} already exists on {on} ({other['status']})",
-                        f"if it is unused: edgible app delete {app['name']}",
-                        f"or publish this one under another name, such as --name {card.name}-{app['name']}",
-                    )
+        for key, value in env.items():
+            if not DEVICE_VAR.match(key) or not value:
+                continue
+            matches = [d for d in devices if d["name"] == value]
+            if len(matches) == 1:
+                report.ok(f"{key}={value} is device {matches[0]['id']} ({matches[0]['status']})")
+            elif not matches:
+                report.conflict(
+                    f"{key}={value} matches no device",
+                    f"use one of: {device_names}",
+                )
+            else:
+                report.conflict(
+                    f"{key}={value} matches {len(matches)} devices",
+                    "rename one with `edgible device` so each name is unique",
+                )
+        for app in apps:
+            other = existing_apps.get(app["name"])
+            if other is None:
+                report.ok(f"app {app['name']} is free")
+                continue
+            key = device_var(app.get("place", ""), env)
+            device = env.get(key, "") if key else ""
+            on = ", ".join(d["name"] for d in other.get("devices", [])) or "no device"
+            if device and device in on.split(", "):
+                report.warn(
+                    f"app {app['name']} already exists on {device} ({other['status']}, "
+                    f"port {other.get('port')})",
+                    "if this card published it before, skip it in the Publish step",
+                    Cmd("to publish it again, delete it first",
+                        f"edgible app delete {shlex.quote(app['name'])}", safe=False),
+                )
+            else:
+                report.conflict(
+                    f"app {app['name']} already exists on {on} ({other['status']})",
+                    Cmd("if it is unused", f"edgible app delete {shlex.quote(app['name'])}", safe=False),
+                    f"or publish this one under another name, such as --name {card.name}-{app['name']}",
+                )
 
-    print()
-    if report.conflicts:
-        print(f"{report.conflicts} conflict(s), {report.warnings} warning(s). "
-              "Fix the conflicts, then run this again.")
-        return 1
-    print(f"no conflicts, {report.warnings} warning(s). Start the containers.")
-    return 0
+    rerun = shlex.join(["python3", sys.argv[0], *[a for a in argv if a != "--commands"]])
+    has_remedy = any(
+        isinstance(r, (Edit, Cmd)) for _, remedies in report.findings for r in remedies
+    )
+    if args.commands:
+        print("\n".join(report.commands(env_file, rerun)))
+    else:
+        print()
+        if report.conflicts:
+            print(f"{report.conflicts} conflict(s), {report.warnings} warning(s). "
+                  "Fix the conflicts, then run this again.")
+        else:
+            print(f"no conflicts, {report.warnings} warning(s). Start the containers.")
+        if has_remedy:
+            print("\nTo apply the remedies, paste these lines into a shell:\n")
+            print("\n".join(report.commands(env_file, rerun)))
+    return 1 if report.conflicts else 0
 
 
 if __name__ == "__main__":

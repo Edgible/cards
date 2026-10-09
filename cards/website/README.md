@@ -34,7 +34,7 @@ nano website/card.env
 
 ### 3. Check
 
-Check this machine before anything starts. The check reads `card.env` and looks for what the card would collide with: a host port, a container name, a Compose project, a leftover volume, a device name, or an app name. Each conflict prints its remedy. Fix them and run the check again until it says `no conflicts`. It needs `python3` and Docker, and it uses `edgible` when that is installed.
+Check this machine before anything starts. The check reads `card.env` and looks for what the card would collide with: a host port, a container name, a Compose project, a leftover volume, a device name, or an app name. Each conflict prints its remedy. The report ends with those remedies as lines to paste into a shell: they fill empty secrets and change ports in `card.env`, keeping the old copy as `card.env.bak`. A line that stops or deletes something starts with `#`, so it runs only if you remove the `#`. Run the check again until it says `no conflicts`. It needs `python3` and Docker, and it uses `edgible` when that is installed.
 
 ```bash
 curl -fsSLo check-env.py https://raw.githubusercontent.com/Edgible/cards/main/tools/check-env.py
