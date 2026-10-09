@@ -89,22 +89,28 @@ edgible app list
 
 `edgible app list` shows `litellm` with `org` and `litellm-api` with `none`.
 
-## Getting Started
+## Verify
 
-`edgible app list` prints each hostname.
+`edgible app list` prints each hostname. Each app answers the way its auth mode says: `none` with the app, `org` with a redirect to the Edgible sign-in, and `api-key` with `401` until a key is sent. This checks the card. The rest of each app's setup is in that app's docs.
 
-`litellm` uses `org`. Open that hostname and sign in. The Admin UI username is `admin` and the password is `LITELLM_MASTER_KEY`. Create a team, then a virtual key for that team. The key is shown once.
-
-`litellm-api` uses `none`. Call it with the virtual key.
+`litellm` uses `org`.
 
 ```bash
-curl -fsS "https://<hostname>/v1/chat/completions" \
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "https://<litellm hostname>"
+```
+
+That prints `302` and an `edgible.com/application-access/` address, so the org sign-in is in front. Open the hostname in a browser and sign in. The Admin UI username is `admin` and the password is `LITELLM_MASTER_KEY`. Create a team, then a virtual key for that team. The key is shown once. The rest of the setup is in the [LiteLLM docs](https://docs.litellm.ai).
+
+`litellm-api` uses `none`.
+
+```bash
+curl -fsS "https://<litellm-api hostname>/v1/chat/completions" \
   -H "Authorization: Bearer sk-<virtual-key>" \
   -H "Content-Type: application/json" \
   -d '{"model":"qwen2.5","messages":[{"role":"user","content":"Say hello in five words."}]}'
 ```
 
-A short reply means the key worked.
+A short reply means the proxy, the key, and the model work.
 
 ## Tear down
 

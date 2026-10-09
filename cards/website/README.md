@@ -127,27 +127,49 @@ edgible app list
 
 `edgible app list` shows `site` and `analytics` with `none`, and `strapi`, `umami`, and `status` with `org`.
 
-## Getting Started
+## Verify
 
-`edgible app list` prints each hostname.
+`edgible app list` prints each hostname. Each app answers the way its auth mode says: `none` with the app, `org` with a redirect to the Edgible sign-in, and `api-key` with `401` until a key is sent. This checks the card. The rest of each app's setup is in that app's docs.
 
-`site` uses `none`. The page contains `Served from a box I own.` That sentence is the sample Page in Strapi. Edit it in the editor and reload the site.
-
-```bash
-curl -fsS "https://<hostname>"
-```
-
-`strapi` uses `org`. Open that hostname and sign in. The first visit creates the Strapi admin. The rest of the setup is in Strapi.
-
-`analytics` uses `none`. The tracker script comes back, not an org login page.
+`site` uses `none`.
 
 ```bash
-curl -fsS "https://<hostname>/script.js"
+curl -fsS "https://<site hostname>" | grep -o "Served from a box I own."
 ```
 
-`umami` uses `org`. Open that hostname and sign in. The first visit creates the Umami admin. The rest of the setup is in Umami.
+That prints the sentence. It is the sample Page in Strapi, so the site reached Strapi through `/api`. Edit the Page in the editor and reload the site.
 
-`status` uses `org`. Open that hostname and sign in. The first visit creates the Uptime Kuma admin. The rest of the setup is in Uptime Kuma.
+`strapi` uses `org`.
+
+```bash
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "https://<strapi hostname>"
+```
+
+That prints `302` and an `edgible.com/application-access/` address, so the org sign-in is in front. Open the hostname in a browser and sign in. The first visit creates the Strapi admin. The rest of the setup is in the [Strapi docs](https://docs.strapi.io).
+
+`analytics` uses `none`.
+
+```bash
+curl -fsS "https://<analytics hostname>/script.js" | head -c 60
+```
+
+That prints the start of the tracking script, not the Edgible sign-in.
+
+`umami` uses `org`.
+
+```bash
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "https://<umami hostname>"
+```
+
+That prints `302` and an `edgible.com/application-access/` address, so the org sign-in is in front. Open the hostname in a browser and sign in. Umami starts with the account `admin` and the password `umami`. Change that password first. The rest of the setup is in the [Umami docs](https://docs.umami.is/docs).
+
+`status` uses `org`.
+
+```bash
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "https://<status hostname>"
+```
+
+That prints `302` and an `edgible.com/application-access/` address, so the org sign-in is in front. Open the hostname in a browser and sign in. The first visit creates the Uptime Kuma admin. The rest of the setup is in the [Uptime Kuma docs](https://github.com/louislam/uptime-kuma/wiki).
 
 ## Tear down
 

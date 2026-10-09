@@ -83,17 +83,25 @@ edgible app list
 
 `edgible app list` shows `n8n` with `org` and `n8n-hooks` with `none`.
 
-## Getting Started
+## Verify
 
-`edgible app list` prints each hostname.
+`edgible app list` prints each hostname. Each app answers the way its auth mode says: `none` with the app, `org` with a redirect to the Edgible sign-in, and `api-key` with `401` until a key is sent. This checks the card. The rest of each app's setup is in that app's docs.
 
-`n8n` uses `org`. Open that hostname and sign in. The owner is the account you created on `127.0.0.1:5678`. The rest of the setup is in n8n.
-
-`n8n-hooks` uses `none`. The response is n8n, not an org login page.
+`n8n` uses `org`.
 
 ```bash
-curl -fsS "https://<hostname>"
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "https://<n8n hostname>"
 ```
+
+That prints `302` and an `edgible.com/application-access/` address, so the org sign-in is in front. Open the hostname in a browser and sign in. The owner is the account you created on `127.0.0.1:5678`. The rest of the setup is in the [n8n docs](https://docs.n8n.io).
+
+`n8n-hooks` uses `none`.
+
+```bash
+curl -fsS "https://<n8n-hooks hostname>/healthz"
+```
+
+That prints `{"status":"ok"}` from n8n, not the Edgible sign-in.
 
 ## Tear down
 
