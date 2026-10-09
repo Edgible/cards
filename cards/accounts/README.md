@@ -16,7 +16,7 @@ The Compose file is [docker-compose.yml](docker-compose.yml). It reads the host 
 
 ## How
 
-Five steps. Edit [card.env](card.env) before you start. The Compose file reads that file.
+Six steps. Edit [card.env](card.env) before you start. The Compose file reads that file.
 
 ### 1. Fetch
 
@@ -30,19 +30,28 @@ curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
 
 ### 2. Edit card.env
 
-Open `accounts/card.env` and follow the comments in that file. Leave `LOGTO_ENDPOINT` and `LOGTO_ADMIN_ENDPOINT` empty until step 5, unless you already know both hostnames.
+Open `accounts/card.env` and follow the comments in that file. Leave `LOGTO_ENDPOINT` and `LOGTO_ADMIN_ENDPOINT` empty until step 6, unless you already know both hostnames.
 
 ```bash
 nano accounts/card.env
 ```
 
-### 3. Start
+### 3. Check
+
+Check this machine before anything starts. The check reads `card.env` and looks for what the card would collide with: a host port, a container name, a Compose project, a leftover volume, a device name, or an app name. Each conflict prints its remedy. Fix them and run the check again until it says `no conflicts`. It needs `python3` and Docker, and it uses `edgible` when that is installed.
 
 ```bash
-docker compose --project-name accounts --env-file accounts/card.env -f accounts/docker-compose.yml up -d --wait
+curl -fsSLo check-env.py https://raw.githubusercontent.com/Edgible/cards/main/tools/check-env.py
+python3 check-env.py accounts
 ```
 
-### 4. Publish
+### 4. Start
+
+```bash
+docker compose --env-file accounts/card.env -f accounts/docker-compose.yml up -d --wait
+```
+
+### 5. Publish
 
 `jq` reads the device id out of `edgible device list`.
 
@@ -76,7 +85,7 @@ edgible app list
 
 `edgible app list` shows `accounts` with `none` and `accounts-admin` with `org`.
 
-### 5. Record the hostnames
+### 6. Record the hostnames
 
 Logto writes its own public URL into every redirect and token. Until it knows both hostnames, it uses `localhost`. Put the two hostnames from `edgible app list` into `accounts/card.env`, with `https://` in front:
 
@@ -88,7 +97,7 @@ LOGTO_ADMIN_ENDPOINT=https://<accounts-admin hostname>
 Then start the card again. Compose recreates the Logto container with the new URLs. The database stays.
 
 ```bash
-docker compose --project-name accounts --env-file accounts/card.env -f accounts/docker-compose.yml up -d --wait
+docker compose --env-file accounts/card.env -f accounts/docker-compose.yml up -d --wait
 ```
 
 ## Getting Started
@@ -99,6 +108,6 @@ docker compose --project-name accounts --env-file accounts/card.env -f accounts/
 curl -fsS "https://<accounts hostname>/oidc/.well-known/openid-configuration" | jq -r .issuer
 ```
 
-That prints `https://<accounts hostname>/oidc`. If it prints `localhost`, step 5 did not take.
+That prints `https://<accounts hostname>/oidc`. If it prints `localhost`, step 6 did not take.
 
 `accounts-admin` uses `org`. Open `https://<accounts-admin hostname>/console` and sign in. The first visit creates the Logto admin. The rest of the setup is in Logto: add an application for your site, and that application's settings give you the values your site needs to send visitors to `accounts`.

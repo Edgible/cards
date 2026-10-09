@@ -1,7 +1,9 @@
 # Logto Compose file for the accounts card.
 # Each start seeds an empty database, then applies the alterations for this image version.
 # Ports, the password, and the endpoints come from card.env. Start with:
-#   docker compose --project-name accounts --env-file card.env -f docker-compose.yml up -d
+#   docker compose --env-file card.env -f docker-compose.yml up -d
+
+name: accounts
 
 services:
   logto:
