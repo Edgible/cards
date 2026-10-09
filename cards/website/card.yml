@@ -26,16 +26,6 @@ applications:
     authModes: [org]
     place: web
 
-  - name: analytics
-    what: Umami tracking script, same process as umami
-    from: ghcr.io/umami-software/umami:latest
-    port: 3000
-    protocol: https
-    subtype: existing
-    published: true
-    authModes: [none]
-    place: web
-
   - name: umami
     what: Umami dashboard
     from: ghcr.io/umami-software/umami:latest
@@ -45,6 +35,16 @@ applications:
     subtype: existing
     published: true
     authModes: [org]
+    place: web
+
+  - name: analytics
+    what: Umami tracking script, same process as umami
+    from: ghcr.io/umami-software/umami:latest
+    port: 3000
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [none]
     place: web
 
   - name: status

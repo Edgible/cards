@@ -12,7 +12,7 @@ The org login protects pages for you and your team. This card is the login for t
 
 Logto keeps all its state in Postgres: users, apps, sign-in settings, sessions, and the keys that sign its tokens. That is the one volume `logto-db-data`. The Logto container holds nothing, and a `pg_dump` of the `logto` database is the whole install. Each user has a `customData` JSON object for small facts about that person, such as a plan or a preference. Keep secrets and the records of your app out of it.
 
-The Compose file is [docker-compose.yml](docker-compose.yml). It reads the host ports, the database password, and `ORG_LABEL` from [card.env](card.env). Logto writes its public URLs into every redirect and token, so it is told them before it starts: the sign-in hostname is `accounts` plus that label, and the console hostname is `accounts-admin` plus that label. On your own domain, `LOGTO_ENDPOINT` and `LOGTO_ADMIN_ENDPOINT` replace them. Each start seeds an empty database and applies the database changes for the Logto version in that file. The card is [card.yml](card.yml).
+The Compose file is [docker-compose.yml](docker-compose.yml). It reads the host ports, the database password, and `ORG_LABEL` from [card.env](card.env). Logto writes its public URLs into every redirect and token, so it is told them before it starts: the sign-in hostname is `accounts` plus that label, and the console hostname is `accounts-admin` plus that label. On your own domain, `ACCOUNTS_URL` and `ACCOUNTS_ADMIN_URL` replace them. Each start seeds an empty database and applies the database changes for the Logto version in that file. The card is [card.yml](card.yml).
 
 ## How
 
@@ -53,14 +53,14 @@ docker compose --env-file accounts/card.env -f accounts/docker-compose.yml up -d
 
 ### 5. Publish
 
-`jq` reads the device id out of `edgible device list`.
+`jq` reads that device's id out of `edgible device list`.
 
 ```bash
 set -euo pipefail
 set -a
 . accounts/card.env
 set +a
-identity_id=$(edgible device list --json | jq -er --arg name "$IDENTITY_DEVICE" '
+device_id=$(edgible device list --json | jq -er --arg name "$DEVICE" '
   map(select(.name == $name))
   | if length == 1 then .[0].id
     else error("need exactly one device named " + $name + " (" + (map(.status + " " + .id) | join(", ")) + ")")
@@ -72,14 +72,14 @@ edgible app create existing \
   --port "$ACCOUNTS_PORT" \
   --protocol https \
   --auth-modes none \
-  --device-id "$identity_id"
+  --device-id "$device_id"
 edgible app create existing \
   --non-interactive \
   --name accounts-admin \
   --port "$ACCOUNTS_ADMIN_PORT" \
   --protocol https \
   --auth-modes org \
-  --device-id "$identity_id"
+  --device-id "$device_id"
 edgible app list
 ```
 

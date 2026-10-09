@@ -31,7 +31,7 @@ Check a file with `tools/run check-cards`. The command is in the [publish sectio
 
 ## check-cards.py
 
-Runs that check. With no arguments it checks every `cards/<name>/card.yml`. `metadata.name` must match the directory name. The pull request workflow runs this command. A failing check means the card does not match the schema.
+Runs that check. With no arguments it checks every `cards/<name>/card.yml`. `metadata.name` must match the directory name. It also checks the names the tools rely on, from the conventions table in the [root README](../README.md#publish-a-card): each app's `<APP>_PORT` in `card.env` with the port from `card.yml`, a Compose file that reads it, `DEVICE` or `<PLACE>_DEVICE` for the places, and a top-level `name:` in each Compose file. Each failure says what to change. The pull request workflow runs this command. A failing check means the card does not match the schema.
 
 ```bash
 tools/run check-cards
