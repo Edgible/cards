@@ -54,19 +54,36 @@ When both places are one machine, leave out `-f` and the check covers all three 
 Place `web` runs these two Compose files. The Vite site and Strapi images are built from this card.
 
 ```bash
-docker compose --env-file website/card.env -f website/docker-compose.yml up -d --build
-docker compose --env-file website/card.env -f website/umami-compose.yml up -d
+docker compose --env-file website/card.env -f website/docker-compose.yml up -d --wait --build
+docker compose --env-file website/card.env -f website/umami-compose.yml up -d --wait
 ```
+
+`--wait` returns when each service is running, and healthy when it has a healthcheck. A healthcheck comes from the Compose file or from the image. `ps` shows `(healthy)` in the status of each service that has one:
+
+```bash
+docker compose --env-file website/card.env -f website/docker-compose.yml ps
+docker compose --env-file website/card.env -f website/umami-compose.yml ps
+```
+
+If `--wait` stops with `unhealthy`, `logs <service>` with the same `--env-file` and `-f` usually says why.
 
 ### 5. Start the monitor
 
 On the machine for place `monitor`, fetch this card the same way and edit `card.env` there. Then:
 
 ```bash
-docker compose --env-file website/card.env -f website/kuma-compose.yml up -d
+docker compose --env-file website/card.env -f website/kuma-compose.yml up -d --wait
 ```
 
-When both places are the same machine, run that command in the same directory. That file reads `STATUS_PORT`.
+`--wait` returns when each service is running, and healthy when it has a healthcheck. A healthcheck comes from the Compose file or from the image. `ps` shows `(healthy)` in the status of each service that has one:
+
+```bash
+docker compose --env-file website/card.env -f website/kuma-compose.yml ps
+```
+
+If `--wait` stops with `unhealthy`, `logs <service>` with the same `--env-file` and `-f` usually says why.
+
+When both places are the same machine, run the `up` command in the same directory. That file reads `STATUS_PORT`.
 
 ### 6. Publish
 
