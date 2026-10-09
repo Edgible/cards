@@ -38,17 +38,17 @@ Write `cards/desk/README.md` with four headings: Why, What, How, and Getting Sta
 A picture is optional and is not part of the schema. Draw it from the card:
 
 ```bash
-python3 tools/card-image.py cards/desk
+tools/run card-image cards/desk
 ```
 
 That writes `images/card-light.svg` and `images/card-dark.svg`. If a `what` line does not fit, shorten it and run the command again. A sample file that the card hands you, such as a PDF or a page, goes in `etc/`. The Compose file the card runs sits next to `card.yml`. Its first setting is a top-level `name:`, the Compose project name. Pick one that says which card it is, because two Compose files with the same `name:` on one machine replace each other's containers.
 
 Machine settings go in `card.env`. The Compose file reads that file. A later change to the upstream project is an update to this Compose file. Leave device names, hostnames, organization ids, and passwords out of the Compose file and out of `card.env` in git.
 
-Check the file. This needs the `pyyaml` and `jsonschema` packages. The same check runs on the pull request.
+Check the file. `tools/run` runs it in a container, so Docker is all it needs. The first run builds that container. The same check runs on the pull request.
 
 ```bash
-python3 tools/check-cards.py cards/desk/card.yml
+tools/run check-cards cards/desk/card.yml
 ```
 
 `ok` means the file matches the schema and the directory name. Open a pull request. A maintainer merges it onto `main`. That merge is the publish. An update to a card that already exists is a pull request that changes that `card.yml`, and a maintainer decides whether the change belongs there.
