@@ -1,6 +1,6 @@
 # Logto Compose file for the accounts card.
 # Each start seeds an empty database, then applies the alterations for this image version.
-# Ports, the password, and the endpoints come from card.env. Start with:
+# Ports, the password, and ORG_LABEL come from card.env. Start with:
 #   docker compose --env-file card.env -f docker-compose.yml up -d
 
 name: accounts
@@ -20,8 +20,8 @@ services:
     environment:
       DB_URL: postgres://logto:${LOGTO_DB_PASSWORD:?set LOGTO_DB_PASSWORD in card.env}@db:5432/logto
       TRUST_PROXY_HEADER: 1
-      ENDPOINT: ${LOGTO_ENDPOINT:-}
-      ADMIN_ENDPOINT: ${LOGTO_ADMIN_ENDPOINT:-}
+      ENDPOINT: ${LOGTO_ENDPOINT:-https://accounts.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}
+      ADMIN_ENDPOINT: ${LOGTO_ADMIN_ENDPOINT:-https://accounts-admin.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}
     depends_on:
       db:
         condition: service_healthy

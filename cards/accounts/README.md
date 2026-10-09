@@ -12,11 +12,11 @@ The org login protects pages for you and your team. This card is the login for t
 
 Logto keeps all its state in Postgres: users, apps, sign-in settings, sessions, and the keys that sign its tokens. That is the one volume `logto-db-data`. The Logto container holds nothing, and a `pg_dump` of the `logto` database is the whole install. Each user has a `customData` JSON object for small facts about that person, such as a plan or a preference. Keep secrets and the records of your app out of it.
 
-The Compose file is [docker-compose.yml](docker-compose.yml). It reads the host ports, the database password, and the public URLs from [card.env](card.env). Each start seeds an empty database and applies the database changes for the Logto version in that file. The card is [card.yml](card.yml).
+The Compose file is [docker-compose.yml](docker-compose.yml). It reads the host ports, the database password, and `ORG_LABEL` from [card.env](card.env). Logto writes its public URLs into every redirect and token, so it is told them before it starts: the sign-in hostname is `accounts` plus that label, and the console hostname is `accounts-admin` plus that label. On your own domain, `LOGTO_ENDPOINT` and `LOGTO_ADMIN_ENDPOINT` replace them. Each start seeds an empty database and applies the database changes for the Logto version in that file. The card is [card.yml](card.yml).
 
 ## How
 
-Six steps. Edit [card.env](card.env) before you start. The Compose file reads that file.
+Five steps. Edit [card.env](card.env) before you start. The Compose file reads that file.
 
 ### 1. Fetch
 
@@ -30,7 +30,7 @@ curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
 
 ### 2. Edit card.env
 
-Open `accounts/card.env` and follow the comments in that file. Leave `LOGTO_ENDPOINT` and `LOGTO_ADMIN_ENDPOINT` empty until step 6, unless you already know both hostnames.
+Open `accounts/card.env` and follow the comments in that file.
 
 ```bash
 nano accounts/card.env
@@ -85,32 +85,25 @@ edgible app list
 
 `edgible app list` shows `accounts` with `none` and `accounts-admin` with `org`.
 
-### 6. Record the hostnames
+## Verify
 
-Logto writes its own public URL into every redirect and token. Until it knows both hostnames, it uses `localhost`. Put the two hostnames from `edgible app list` into `accounts/card.env`, with `https://` in front:
+`edgible app list` prints each hostname. Each app answers the way its auth mode says: `none` with the app, `org` with a redirect to the Edgible sign-in, and `api-key` with `401` until a key is sent. This checks the card. The rest of each app's setup is in that app's docs.
 
-```bash
-LOGTO_ENDPOINT=https://<accounts hostname>
-LOGTO_ADMIN_ENDPOINT=https://<accounts-admin hostname>
-```
-
-Then start the card again. Compose recreates the Logto container with the new URLs. The database stays.
-
-```bash
-docker compose --env-file accounts/card.env -f accounts/docker-compose.yml up -d --wait
-```
-
-## Getting Started
-
-`accounts` uses `none`. The issuer in its OpenID configuration is the hostname you recorded.
+`accounts` uses `none`.
 
 ```bash
 curl -fsS "https://<accounts hostname>/oidc/.well-known/openid-configuration" | jq -r .issuer
 ```
 
-That prints `https://<accounts hostname>/oidc`. If it prints `localhost`, step 6 did not take.
+That prints `https://<accounts hostname>/oidc`. If it prints `localhost` or another hostname, `ORG_LABEL` in `card.env` does not match the hostname `edgible app list` prints.
 
-`accounts-admin` uses `org`. Open `https://<accounts-admin hostname>/console` and sign in. The first visit creates the Logto admin. The rest of the setup is in Logto: add an application for your site, and that application's settings give you the values your site needs to send visitors to `accounts`.
+`accounts-admin` uses `org`.
+
+```bash
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "https://<accounts-admin hostname>"
+```
+
+That prints `302` and an `edgible.com/application-access/` address, so the org sign-in is in front. Open the hostname in a browser and sign in. Then open `/console` on it. The first visit creates the Logto admin. Add an application for your site there. Its settings give the values your site needs to send visitors to `accounts`. The rest of the setup is in the [Logto docs](https://docs.logto.io).
 
 ## Tear down
 
