@@ -13,4 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: tools/run check-cards
+      - uses: actions/checkout@v4
+        with:
+          repository: Edgible/card-kit
+          path: .card-kit
+      - run: .card-kit/run check-cards

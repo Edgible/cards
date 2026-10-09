@@ -28,7 +28,7 @@ So we made a smaller promise instead. A card belongs to whoever wrote it. It's t
 
 ## Same shape every time
 
-Once you've used one card, you know how to use them all. Every README has the same sections (Why, What, How, Verify, Tear down) and the same steps, and the settings follow the same names. The [conventions table](README.md#publish-a-card) has the details if you're writing one.
+Once you've used one card, you know how to use them all. Every README has the same sections (Why, What, How, Verify, Tear down) and the same steps, and the settings follow the same names. The [conventions table](https://github.com/Edgible/card-kit#conventions) has the details if you're writing one.
 
 We also wanted cards to be checkable rather than "trust me". Before you start, `check-env.py` looks at your machine for anything the card would trip over, like a port that's already taken or an app with the same name, and prints the fixes as lines you can paste. After you publish, the Verify section checks that each hostname answers the way it should. And Tear down takes everything apart in the right order, backing up your data before it deletes anything.
 
