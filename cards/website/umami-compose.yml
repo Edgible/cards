@@ -1,6 +1,8 @@
 # Umami Compose file for the website card.
 # Secrets and the host port come from card.env. Start with:
-#   docker compose --project-name umami --env-file card.env -f umami-compose.yml up -d
+#   docker compose --env-file card.env -f umami-compose.yml up -d
+
+name: umami
 
 services:
   umami:

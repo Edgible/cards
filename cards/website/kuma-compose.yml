@@ -1,6 +1,8 @@
 # Uptime Kuma Compose file for the website card.
 # The host port comes from card.env. Start with:
-#   docker compose --project-name status --env-file card.env -f kuma-compose.yml up -d
+#   docker compose --env-file card.env -f kuma-compose.yml up -d
+
+name: status
 
 services:
   uptime-kuma:

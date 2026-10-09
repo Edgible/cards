@@ -12,7 +12,7 @@ The Compose file is [docker-compose.yml](docker-compose.yml). The model list is 
 
 ## How
 
-Five steps. Edit [card.env](card.env) before you start. [docker-compose.yml](docker-compose.yml) reads that file.
+Six steps. Edit [card.env](card.env) before you start. [docker-compose.yml](docker-compose.yml) reads that file.
 
 ### 1. Fetch
 
@@ -32,13 +32,22 @@ Open `litellm/card.env` and follow the comments in that file.
 nano litellm/card.env
 ```
 
-### 3. Start
+### 3. Check
+
+Check this machine before anything starts. The check reads `card.env` and looks for what the card would collide with: a host port, a container name, a Compose project, a leftover volume, a device name, or an app name. Each conflict prints its remedy. Fix them and run the check again until it says `no conflicts`. It needs `python3` and Docker, and it uses `edgible` when that is installed.
+
+```bash
+curl -fsSLo check-env.py https://raw.githubusercontent.com/Edgible/cards/main/tools/check-env.py
+python3 check-env.py litellm
+```
+
+### 4. Start
 
 ```bash
 docker compose --env-file litellm/card.env -f litellm/docker-compose.yml up -d
 ```
 
-### 4. Pull the model
+### 5. Pull the model
 
 `qwen2.5:7b` is the chat model. The pull is large and stays on this machine.
 
@@ -46,7 +55,7 @@ docker compose --env-file litellm/card.env -f litellm/docker-compose.yml up -d
 docker exec litellm-ollama ollama pull qwen2.5:7b
 ```
 
-### 5. Publish
+### 6. Publish
 
 `jq` reads that device's id out of `edgible device list`.
 

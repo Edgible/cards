@@ -2,6 +2,8 @@
 # Passwords, the org label, and the host port come from card.env. Start with:
 #   docker compose --env-file card.env -f docker-compose.yml up -d
 
+name: n8n
+
 volumes:
   db_storage:
   n8n_storage:
