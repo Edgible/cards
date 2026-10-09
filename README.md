@@ -11,6 +11,7 @@ Each top-level directory with a `card.yml` in it is one card. Its README is how 
 - [assistant](assistant/README.md)
 - [litellm](litellm/README.md)
 - [accounts](accounts/README.md)
+- [ci](ci/README.md)
 
 The format of a card, its conventions, and the tools that check it are in [Edgible/card-kit](https://github.com/Edgible/card-kit). Single-app starters to build a card from are in [Edgible/starters](https://github.com/Edgible/starters).
 
