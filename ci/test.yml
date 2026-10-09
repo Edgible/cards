@@ -1,0 +1,31 @@
+tested: 2026-10-10
+result: pass
+card-kit: c2f3407
+edgible-cli: 1.4.6
+machine: darwin/arm64, docker 29.4.3
+images:
+  - docker.gitea.com/act_runner:5.0.0@sha256:328b8dad8de80a19dab6c5c61292c1d624cd3460c25a5c0067e95c11318657ca
+  - gitea/gitea:28.1.0@sha256:f505a0d3a41323b786e05942fc7a4075e07ae7c169fd9485649aa55ee543a21a
+  - postgres:17.11-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    gitea: pass
+    gitea-ssh: pass
+  checks:
+    runner-online: pass
+    workflow-runs: pass
+  teardown: pass
+measured:
+  forge:
+    memory: 171 MB
+    images: 184 MB
+    data: 74 MB
+  runner:
+    memory: 15 MB
+    images: 19 MB
+    data: 8 KB
+duration: 10m
+by: agent

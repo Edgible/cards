@@ -1,0 +1,23 @@
+# Compose file for place runner of the ci card: Gitea's act_runner, on a machine of its own.
+# It publishes nothing. It connects out to Gitea's published hostname, takes jobs, and runs
+# each in a container through this machine's Docker socket. Start it after Publish:
+#   docker compose --env-file card.env -f runner-compose.yml up -d --wait
+
+name: ci-runner
+
+services:
+  gitea-runner:
+    image: docker.gitea.com/act_runner:5.0.0
+    restart: unless-stopped
+    environment:
+      GITEA_INSTANCE_URL: ${GITEA_URL:-https://gitea.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}
+      GITEA_RUNNER_REGISTRATION_TOKEN: ${GITEA_RUNNER_TOKEN:?set GITEA_RUNNER_TOKEN in card.env}
+      GITEA_RUNNER_NAME: ${RUNNER_DEVICE:-runner}
+      GITEA_RUNNER_LABELS: ${GITEA_RUNNER_LABELS:-ubuntu-latest:docker://node:22-bookworm-slim}
+    volumes:
+      - gitea-runner-data:/data
+      # Full control of this machine's Docker, which is how the runner starts each job.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  gitea-runner-data: {}
