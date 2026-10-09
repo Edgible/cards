@@ -8,6 +8,7 @@ Edgible cards let a deployment pattern be shared and reproduced. A card records 
 - [n8n](cards/n8n/README.md)
 - [assistant](cards/assistant/README.md)
 - [litellm](cards/litellm/README.md)
+- [accounts](cards/accounts/README.md)
 
 What each file in `tools/` does is [tools/README.md](tools/README.md).
 

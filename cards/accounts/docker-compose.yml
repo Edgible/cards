@@ -1,0 +1,58 @@
+# Logto Compose file for the accounts card.
+# Each start seeds an empty database, then applies the alterations for this image version.
+# Ports, the password, and ORG_LABEL come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d
+
+name: accounts
+
+services:
+  logto:
+    image: svhd/logto:1.44.0
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        "npm run cli db seed -- --swe && npm run cli db alteration deploy 1.44.0 && npm start",
+      ]
+    ports:
+      - "127.0.0.1:${ACCOUNTS_PORT:?set ACCOUNTS_PORT in card.env}:3001"
+      - "127.0.0.1:${ACCOUNTS_ADMIN_PORT:?set ACCOUNTS_ADMIN_PORT in card.env}:3002"
+    environment:
+      DB_URL: postgres://logto:${LOGTO_DB_PASSWORD:?set LOGTO_DB_PASSWORD in card.env}@db:5432/logto
+      TRUST_PROXY_HEADER: 1
+      ENDPOINT: ${LOGTO_ENDPOINT:-https://accounts.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}
+      ADMIN_ENDPOINT: ${LOGTO_ADMIN_ENDPOINT:-https://accounts-admin.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/api/status').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: logto
+      POSTGRES_USER: logto
+      POSTGRES_PASSWORD: ${LOGTO_DB_PASSWORD:?set LOGTO_DB_PASSWORD in card.env}
+    volumes:
+      - logto-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logto -d logto"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  logto-db-data: {}
