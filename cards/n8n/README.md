@@ -10,7 +10,7 @@ Both apps are the place `workhorse`, so they stay on one serving device. They sh
 
 ## How
 
-Five steps. Edit [card.env](card.env) before you start. [docker-compose.yml](docker-compose.yml) reads that file.
+Six steps. Edit [card.env](card.env) before you start. [docker-compose.yml](docker-compose.yml) reads that file.
 
 ### 1. Fetch
 
@@ -30,17 +30,26 @@ Open `n8n/card.env` and follow the comments in that file.
 nano n8n/card.env
 ```
 
-### 3. Start
+### 3. Check
+
+Check this machine before anything starts. The check reads `card.env` and looks for what the card would collide with: a host port, a container name, a Compose project, a leftover volume, a device name, or an app name. Each conflict prints its remedy. The report ends with those remedies as lines to paste into a shell: they fill empty secrets and change ports in `card.env`, keeping the old copy as `card.env.bak`. A line that stops or deletes something starts with `#`, so it runs only if you remove the `#`. Run the check again until it says `no conflicts`. It needs `python3` and Docker, and it uses `edgible` when that is installed.
+
+```bash
+curl -fsSLo check-env.py https://raw.githubusercontent.com/Edgible/cards/main/tools/check-env.py
+python3 check-env.py n8n
+```
+
+### 4. Start
 
 ```bash
 docker compose --env-file n8n/card.env -f n8n/docker-compose.yml up -d
 ```
 
-### 4. Create the owner
+### 5. Create the owner
 
 Open `http://127.0.0.1:5678` and create the n8n owner. This account stays on this machine.
 
-### 5. Publish
+### 6. Publish
 
 `jq` reads that device's id out of `edgible device list`.
 

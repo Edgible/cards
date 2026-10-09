@@ -2,6 +2,8 @@
 # Ports come from card.env. Start with:
 #   docker compose --env-file card.env -f docker-compose.yml up -d
 
+name: assistant
+
 services:
   ollama:
     volumes:

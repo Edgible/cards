@@ -2,6 +2,8 @@
 # Secrets and the host port come from card.env. Start with:
 #   docker compose --env-file card.env -f docker-compose.yml up -d
 
+name: litellm
+
 services:
   ollama:
     image: ollama/ollama:latest

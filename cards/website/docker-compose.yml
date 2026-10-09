@@ -1,7 +1,9 @@
 # Site Compose file for the website card.
 # nginx serves the Vite build and forwards /api to Strapi on this network.
 # Ports and secrets come from card.env. Start with:
-#   docker compose --project-name site --env-file card.env -f docker-compose.yml up -d --build
+#   docker compose --env-file card.env -f docker-compose.yml up -d --build
+
+name: site
 
 services:
   site:

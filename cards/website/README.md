@@ -12,7 +12,7 @@ The Compose files are [docker-compose.yml](docker-compose.yml), [umami-compose.y
 
 ## How
 
-Five steps. Edit [card.env](card.env) before you start. The Compose files read that file.
+Six steps. Edit [card.env](card.env) before you start. The Compose files read that file.
 
 ### 1. Fetch
 
@@ -32,26 +32,43 @@ Open `website/card.env` and follow the comments in that file.
 nano website/card.env
 ```
 
-### 3. Start the site and Umami
+### 3. Check
+
+Check this machine before anything starts. The check reads `card.env` and looks for what the card would collide with: a host port, a container name, a Compose project, a leftover volume, a device name, or an app name. Each conflict prints its remedy. The report ends with those remedies as lines to paste into a shell: they fill empty secrets and change ports in `card.env`, keeping the old copy as `card.env.bak`. A line that stops or deletes something starts with `#`, so it runs only if you remove the `#`. Run the check again until it says `no conflicts`. It needs `python3` and Docker, and it uses `edgible` when that is installed.
+
+```bash
+curl -fsSLo check-env.py https://raw.githubusercontent.com/Edgible/cards/main/tools/check-env.py
+python3 check-env.py website -f docker-compose.yml -f umami-compose.yml
+```
+
+On the machine for place `monitor`, check the file that runs there:
+
+```bash
+python3 check-env.py website -f kuma-compose.yml
+```
+
+When both places are one machine, leave out `-f` and the check covers all three files.
+
+### 4. Start the site and Umami
 
 Place `web` runs these two Compose files. The Vite site and Strapi images are built from this card.
 
 ```bash
-docker compose --project-name site --env-file website/card.env -f website/docker-compose.yml up -d --build
-docker compose --project-name umami --env-file website/card.env -f website/umami-compose.yml up -d
+docker compose --env-file website/card.env -f website/docker-compose.yml up -d --build
+docker compose --env-file website/card.env -f website/umami-compose.yml up -d
 ```
 
-### 4. Start the monitor
+### 5. Start the monitor
 
 On the machine for place `monitor`, fetch this card the same way and edit `card.env` there. Then:
 
 ```bash
-docker compose --project-name status --env-file website/card.env -f website/kuma-compose.yml up -d
+docker compose --env-file website/card.env -f website/kuma-compose.yml up -d
 ```
 
 When both places are the same machine, run that command in the same directory. That file reads `STATUS_PORT`.
 
-### 5. Publish
+### 6. Publish
 
 `jq` reads each device's id out of `edgible device list`.
 
