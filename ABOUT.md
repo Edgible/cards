@@ -4,6 +4,14 @@ Self-hosting usually happens alone. Someone puts a few apps on a box in the gara
 
 Cards are for the moment after it works. A card is a setup someone is happy with, written down so that anyone can reproduce it on their own machine.
 
+## Run it yourself
+
+Need a website with an editor, analytics, and a check that it stays up? The usual answer is a subscription for each one, with your content and your visitors' data on someone else's servers. Cards make the other answer easy: run it yourself.
+
+- **Your data stays with you.** Your pages, your documents, your users, and your visitors' data live on a machine you own. Nothing sensitive has to leave the building.
+- **Your tools stay yours.** Open-source apps on your own hardware don't change price, terms, or features under you.
+- **It is easier than it used to be.** A card gives you the whole setup, and its steps are the same every time: plain commands, checks that print their own fixes, and the same names on every card. That makes them easy to follow for a person, or for an AI assistant working with you.
+
 ## Self-hosting is social
 
 A setup in a garage can serve more than its owner. It can run the site for a club, the tools for a team, or the photos for a family. Edgible puts each app on a public hostname, and each hostname has its own auth mode: open to anyone, behind your organization's sign-in, or behind an API key. So the people you host for use what you run, on your hardware.
