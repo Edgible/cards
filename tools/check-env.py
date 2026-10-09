@@ -351,9 +351,12 @@ def main(argv: list[str]) -> int:
     report.section("card.env")
     resolved: list[tuple[Path, dict]] = []
     for compose in files:
+        config, error = compose_config(compose, env_file)
         # Compose stops at the first empty value, so list every required one here.
+        # Only when Compose fails: a required value inside a default that is not used,
+        # such as ${URL:-https://app.${ORG_LABEL:?}.edgible.com} with URL set, is not needed.
         required = dict.fromkeys(REQUIRED_VAR.findall(compose.read_text()))
-        empty = [var for var in required if not env.get(var)]
+        empty = [var for var in required if not env.get(var)] if config is None else []
         if empty:
             made = [var for var in empty if var in generate]
             by_hand = [var for var in empty if var not in generate]
@@ -368,7 +371,6 @@ def main(argv: list[str]) -> int:
                 ),
             )
             continue
-        config, error = compose_config(compose, env_file)
         if config is None:
             last = error.splitlines()[-1] if error else "docker compose config failed"
             report.conflict(f"{compose.name}: {last}", f"fix that in {env_file.name} or {compose.name}")
