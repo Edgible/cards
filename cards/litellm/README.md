@@ -44,8 +44,16 @@ python3 check-env.py litellm
 ### 4. Start
 
 ```bash
-docker compose --env-file litellm/card.env -f litellm/docker-compose.yml up -d
+docker compose --env-file litellm/card.env -f litellm/docker-compose.yml up -d --wait
 ```
+
+`--wait` returns when each service is running, and healthy when it has a healthcheck. A healthcheck comes from the Compose file or from the image. `ps` shows `(healthy)` in the status of each service that has one:
+
+```bash
+docker compose --env-file litellm/card.env -f litellm/docker-compose.yml ps
+```
+
+If `--wait` stops with `unhealthy`, `logs <service>` with the same `--env-file` and `-f` usually says why.
 
 ### 5. Pull the model
 

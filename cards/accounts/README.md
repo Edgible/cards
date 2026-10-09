@@ -51,6 +51,14 @@ python3 check-env.py accounts
 docker compose --env-file accounts/card.env -f accounts/docker-compose.yml up -d --wait
 ```
 
+`--wait` returns when each service is running, and healthy when it has a healthcheck. A healthcheck comes from the Compose file or from the image. `ps` shows `(healthy)` in the status of each service that has one:
+
+```bash
+docker compose --env-file accounts/card.env -f accounts/docker-compose.yml ps
+```
+
+If `--wait` stops with `unhealthy`, `logs <service>` with the same `--env-file` and `-f` usually says why.
+
 ### 5. Publish
 
 `jq` reads that device's id out of `edgible device list`.
