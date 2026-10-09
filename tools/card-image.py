@@ -4,7 +4,7 @@
 The picture lists the apps, ports, auth modes and places in the card. It draws
 no caller, no hostname and no machine. Run it from the repo root:
 
-    python3 tools/card-image.py cards/website
+    tools/run card-image cards/website
 
 A line that does not fit its box is an error. Shorten that app's `what` line.
 """
@@ -343,7 +343,7 @@ def draw(directory: Path) -> None:
 
 def main() -> None:
     if len(sys.argv) != 2:
-        raise SystemExit("usage: python3 tools/card-image.py cards/<name>")
+        raise SystemExit("usage: tools/run card-image cards/<name>")
     draw(Path(sys.argv[1]))
 
 
