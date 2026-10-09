@@ -16,6 +16,11 @@ that do not match, and Edgible applications with the same name. Each conflict
 prints a remedy. A container, project, or volume from the same Compose file is
 this card already running, and is not a conflict.
 
+A Notes section tells what is worth knowing but is not a problem: a service that
+already runs elsewhere on this machine, an image tag such as latest that moves
+with each release, and where each service's healthcheck comes from. Notes
+change no exit code and no remedy.
+
 The report ends with the remedies as lines to paste into a shell. Edits to
 card.env and restarts run as they are. A line that stops or deletes something
 starts with #, so it runs only when you remove that #. With --commands, only
@@ -32,6 +37,7 @@ from __future__ import annotations
 import argparse
 import errno
 import json
+import os
 import re
 import shlex
 import shutil
@@ -45,6 +51,8 @@ PORT_VAR = re.compile(r"\$\{([A-Z][A-Z0-9_]*)[^}]*\}:\d+")
 DEVICE_VAR = re.compile(r"^(?:[A-Z0-9_]+_)?DEVICE$")
 TOP_NAME = re.compile(r"^name:\s*\S", re.MULTILINE)
 PUBLISHED = re.compile(r"(?:^|:)(\d+)->\d+/(?:tcp|udp)")
+# Images every card may run its own copy of, so a second copy is not worth a note.
+SHARED_EVERYWHERE = {"postgres", "mysql", "mariadb", "redis", "valkey/valkey", "mongo", "alpine"}
 GENERATE = re.compile(r"Generate (?:each |(two) values )?with: (.+)$")
 
 
@@ -111,6 +119,10 @@ class Report:
 
     def skip(self, text: str) -> None:
         self.say(f"  skipped   {text}")
+
+    def note(self, text: str) -> None:
+        """Information for the user. Not a conflict or a warning, and no remedy."""
+        self.say(f"  note      {text}")
 
     def commands(self, env_file: Path, rerun: str) -> list[str]:
         """The remedies as shell lines. One sed makes every card.env edit, so .bak is the file before them."""
@@ -283,14 +295,19 @@ def edgible_lists() -> tuple[list | None, dict, str]:
     return json.loads(devices_out.stdout), apps, ""
 
 
-def compose_config(compose: Path, env_file: Path) -> tuple[dict | None, str]:
-    proc = run(
+def compose_config(
+    compose: Path, env_file: Path, placeholders: dict[str, str] | None = None
+) -> tuple[dict | None, str]:
+    """The file as Compose resolves it. placeholders fill empty values; the shell environment wins over --env-file."""
+    proc = subprocess.run(
         [
             "docker", "compose",
             "--env-file", str(env_file),
             "-f", str(compose),
             "config", "--format", "json",
-        ]
+        ],
+        capture_output=True, text=True,
+        env={**os.environ, **(placeholders or {})},
     )
     if proc.returncode != 0:
         return None, proc.stderr.strip()
@@ -304,6 +321,94 @@ def next_free_port(start: int, taken: set[int], host: str) -> int:
             return port
         port += 1
     return start
+
+
+def image_repo(image: str) -> str:
+    """ollama/ollama:latest and docker.io/ollama/ollama:0.4 are both ollama/ollama."""
+    repo = image.split("@", 1)[0]
+    if ":" in repo.rsplit("/", 1)[-1]:
+        repo = repo.rsplit(":", 1)[0]
+    for prefix in ("docker.io/library/", "docker.io/", "library/"):
+        if repo.startswith(prefix):
+            return repo[len(prefix):]
+    return repo
+
+
+def image_tag(image: str) -> str:
+    if "@" in image:
+        return "@" + image.split("@", 1)[1]
+    last = image.rsplit("/", 1)[-1]
+    return last.rsplit(":", 1)[1] if ":" in last else ""
+
+
+def image_healthcheck(image: str) -> bool | None:
+    """Whether a local image has its own healthcheck. None when the image is not on this machine."""
+    proc = run(["docker", "image", "inspect", "--format", "{{json .Config.Healthcheck}}", image])
+    if proc.returncode != 0:
+        return None
+    test = json.loads(proc.stdout.strip() or "null") or {}
+    return bool(test.get("Test")) and test["Test"] != ["NONE"]
+
+
+def notes(
+    report: Report, files: list[Path], env_file: Path, env: dict[str, str], containers: list[dict]
+) -> None:
+    """Information for whoever runs the card. It changes no exit code and no remedy.
+
+    Images and healthchecks do not depend on passwords, so a value card.env still lacks
+    gets a placeholder here, and a card fresh from Fetch has its notes too.
+    """
+    report.section("Notes")
+    resolved = []
+    for compose in files:
+        empty = {v: "placeholder" for v in REQUIRED_VAR.findall(compose.read_text()) if not env.get(v)}
+        config, _ = compose_config(compose, env_file, empty)
+        if config is not None:
+            resolved.append((compose, config))
+    ours = {config["name"] for _, config in resolved}
+    running = [c for c in containers if c["State"] == "running" and c["Project"] not in ours]
+    said = False
+    for compose, config in resolved:
+        health: list[str] = []
+        for service, spec in config.get("services", {}).items():
+            image = spec.get("image", "")
+            built = "build" in spec
+            # A service that already runs elsewhere on this machine. Each card keeps its own database.
+            if image and not built and image_repo(image) not in SHARED_EVERYWHERE:
+                for other in running:
+                    if image_repo(other["Image"]) == image_repo(image):
+                        ports = ", ".join(str(p) for p in sorted(other["HostPorts"]))
+                        owner = f"project {other['Project']}" if other["Project"] else "no Compose project"
+                        report.note(
+                            f"{service} starts {image_repo(image)}, which container {other['Names']} "
+                            f"({owner}) already runs" + (f" on port {ports}" if ports else "")
+                            + ". Running both works. Sharing one is up to the card's author."
+                        )
+                        said = True
+                        break
+            # An image tag that can change under the card.
+            tag = image_tag(image)
+            if image and not built and not tag.startswith("@") and not any(ch.isdigit() for ch in tag):
+                report.note(
+                    f"{service} uses {image_repo(image)}:{tag or 'latest'}, which moves with each release. "
+                    "What you get may differ from what the card's author tested."
+                )
+                said = True
+            # Where each service's healthcheck comes from.
+            if spec.get("healthcheck") and not spec["healthcheck"].get("disable"):
+                health.append(f"{service} from Compose")
+            else:
+                own = image_healthcheck(image) if image else None
+                health.append(
+                    f"{service} from the image" if own
+                    else f"{service} none" if own is False
+                    else f"{service} not known until the image is pulled"
+                )
+        if health:
+            report.note(f"healthchecks in {compose.name}: {', '.join(health)}")
+            said = True
+    if not said:
+        report.ok("nothing to note")
 
 
 def main(argv: list[str]) -> int:
@@ -619,6 +724,8 @@ def main(argv: list[str]) -> int:
                     Cmd("if it is unused", f"edgible app delete {shlex.quote(app['name'])}", safe=False),
                     f"or publish this one under another name, such as --name {card.name}-{app['name']}",
                 )
+
+    notes(report, files, env_file, env, containers)
 
     rerun = shlex.join(["python3", sys.argv[0], *[a for a in argv if a != "--commands"]])
     has_remedy = any(
