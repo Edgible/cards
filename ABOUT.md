@@ -1,63 +1,39 @@
 # About cards
 
-Self-hosting usually happens alone. Someone puts a few apps on a box in the garage, gets them talking to each other, and puts them online. It works, and nobody else ever sees how. The next person starts again from nothing.
+Say you want a website. You'll probably also want a decent CMS to edit it, some analytics, and something that tells you when it falls over. The default answer these days is a subscription for each of those, with your content and your visitors' data sitting on someone else's servers.
 
-Cards are for the moment after it works. A card is a setup someone is happy with, written down so that anyone can reproduce it on their own machine.
+We think there's a better default: run it yourself. Your data stays on a machine you own, and nothing sensitive has to leave the building. Open-source tools on your own hardware don't change their price or their terms on you. And honestly, it's a lot easier than it used to be.
 
-## Run it yourself
+## Self-hosting doesn't have to be lonely
 
-Need a website with an editor, analytics, and a check that it stays up? The usual answer is a subscription for each one, with your content and your visitors' data on someone else's servers. Cards make the other answer easy: run it yourself.
+Most self-hosting happens alone. Someone puts a few apps on a box in the garage, gets them talking to each other, puts them online, and it works. Nobody else ever sees how they did it, so the next person starts from scratch.
 
-- **Your data stays with you.** Your pages, your documents, your users, and your visitors' data live on a machine you own. Nothing sensitive has to leave the building.
-- **Your tools stay yours.** Open-source apps on your own hardware don't change price, terms, or features under you.
-- **It is easier than it used to be.** A card gives you the whole setup, and its steps are the same every time: plain commands, checks that print their own fixes, and the same names on every card. That makes them easy to follow for a person, or for an AI assistant working with you.
+We'd like that to change. A setup in a garage can already serve more than its owner. Edgible gives each app its own hostname, and you choose who gets in: anyone, people in your organization, or callers with an API key. That's how you end up running the site for your club or the tools for your team.
 
-## Self-hosting is social
+Cards are the other half. When you've got something working that you're happy with, you write it down as a card, and someone else can run the same thing on their own machine. Maybe they tweak it and share their version back. That's the part we're most excited about.
 
-A setup in a garage can serve more than its owner. It can run the site for a club, the tools for a team, or the photos for a family. Edgible puts each app on a public hostname, and each hostname has its own auth mode: open to anyone, behind your organization's sign-in, or behind an API key. So the people you host for use what you run, on your hardware.
+## What's in a card
 
-Cards add the other half: the people you share with. You share what worked. Someone else runs it, changes it to suit them, and shares their version back. A private hobby becomes something people build on together.
+Exposing one port to the internet isn't the hard bit. The hard bit is the whole setup: which apps go together and how they find each other, which hostname is open and which needs a sign-in, what runs on which machine, how you check it works, and how you take it all down again without losing anything. That's what a card records.
 
-## Solutions, not ports
+Take the website card. It's the site, an editor for its pages, analytics, and an uptime monitor that you can put on a second machine, each with the right level of access.
 
-Putting one port on the internet is the easy part. The hard part, and the useful part, is the whole pattern:
+A card never contains anything personal. No device names, hostnames, organization ids, or passwords. You fill those in yourself, on your own machine.
 
-- which apps work together, and how they reach each other
-- which hostname is open, and which needs a sign-in or a key
-- which apps share a machine, and which belong on another one
-- how to check it works, and how to take it down again
+## Why "cards" and not a catalog
 
-A card records that pattern. The website card, for example, is not just a web server. It is the site, the editor for its pages, the analytics, and a monitor that can run on a second machine, each with the right auth mode.
+We thought about building a catalog of apps for a long time. The trouble is that a catalog is a promise: every app in it works, stays up to date, and is supported. Keeping that promise for every app out there would be a full-time job, and a fragile one.
 
-## Cards, not a catalog
+So we made a smaller promise instead. A card belongs to whoever wrote it. It's their record of what worked for them, and they decide how it's built, down to whether they pin image versions. The apps themselves belong to their own projects, so a card gets each one running and reachable and then points you at that app's own docs. Our job at Edgible is the format and the tools around it.
 
-A catalog is a promise that every app in it works, is kept up to date, and is supported. Cards make a smaller promise, so they can stay honest:
+## Same shape every time
 
-- **A card belongs to the person who wrote it.** It is a record of what worked for them. The author decides how it is built, such as which image versions it pins.
-- **An app belongs to its own project.** A card shows how to get each app running and reachable, then links to the app's own docs for the rest. It does not copy them.
-- **Edgible looks after the format and the tools.** The shape every card has, and the checks that keep it that shape.
+Once you've used one card, you know how to use them all. Every README has the same sections (Why, What, How, Verify, Tear down) and the same steps, and the settings follow the same names. The [conventions table](README.md#publish-a-card) has the details if you're writing one.
 
-## Predictable on purpose
+We also wanted cards to be checkable rather than "trust me". Before you start, `check-env.py` looks at your machine for anything the card would trip over, like a port that's already taken or an app with the same name, and prints the fixes as lines you can paste. After you publish, the Verify section checks that each hostname answers the way it should. And Tear down takes everything apart in the right order, backing up your data before it deletes anything.
 
-Every card reads the same way, so once you have used one, you can use them all:
+Because the steps are the same every time, they're easy to follow. That goes for you, and for an AI assistant if you're working with one.
 
-- **The same five headings:** Why, What, How, Verify, and Tear down.
-- **The same steps:** Fetch, edit `card.env`, Check, Start, and Publish.
-- **The same names:** `<APP>_PORT` for each port, `DEVICE` for the machine, and `ORG_LABEL` for the hostnames. The [conventions table](README.md#publish-a-card) lists them all.
-- **Nothing of yours inside:** a card leaves out device names, hostnames, organization ids, and passwords. You fill those in on your own machine.
+## Get involved
 
-## Checks you can run
-
-A card says how to check it, with commands rather than opinions:
-
-- **Before you start,** `check-env.py` looks at your machine for anything the card would collide with: a port, a name, a leftover volume, an app that already exists. It prints the fix for each one as lines you can paste.
-- **After you publish,** Verify checks that each hostname answers the way its auth mode says.
-- **When you are done,** Tear down removes it in the right order, and copies the data before it deletes it.
-
-Because every card has the same steps, anyone can repeat what the author did and see the same result.
-
-## Take part
-
-- **Use a card.** Pick one from the [list](README.md), and follow its README.
-- **Adapt one.** Change a card to suit you, and share it as a variant with a name that says how it differs, such as `n8n-sqlite`.
-- **Share your own.** When a setup of yours works, write it down as a card. [Publish a card](README.md#publish-a-card) says how.
+Have a look at the [cards](README.md) and try one. If you change one to suit yourself, share it back as a variant with a name that says what's different, like `n8n-sqlite`. And if you've built something in your own garage that you're proud of, we'd love to see it as a card. [Publish a card](README.md#publish-a-card) explains how.
