@@ -44,7 +44,7 @@ Tear down is last, with the same four steps as every other card: Unpublish each 
 
 A card holds what depends on Edgible or on another app in the card: hostnames, auth modes, devices, and how the apps reach each other. What is the same on any host belongs to the app: its users, its settings, and how to use it. Link to the app's docs. Do not copy them.
 
-An app that must know its own URL builds it from `ORG_LABEL` in `card.env`, as the n8n card does: `https://<app>.${ORG_LABEL}.edgible.com` is the hostname Publish generates, so nothing changes after Publish. For a URL on your own domain, add an override that wins over it, such as `${APP_URL:-https://app.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}`.
+An app that must know its own URL builds it from `ORG_LABEL` in `card.env`, as the n8n card does: `https://<app>.${ORG_LABEL}.edgible.com` is the hostname Publish generates, so nothing changes after Publish. For a URL on your own domain, add an `<APP>_URL` override that wins over it, such as `${ACCOUNTS_URL:-https://accounts.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}`.
 
 Leave device names, hostnames, organization ids, and passwords out of the README. The schema does not check it.
 
@@ -58,11 +58,23 @@ That writes `images/card-light.svg` and `images/card-dark.svg`. If a `what` line
 
 Machine settings go in `card.env`. The Compose file reads that file. A later change to the upstream project is an update to this Compose file. Leave device names, hostnames, organization ids, and passwords out of the Compose file and out of `card.env` in git.
 
+`card.yml` stays short because the tools read the rest from names. Follow these, and the check below tells you when a name is off. `<APP>` is the app name in capitals, with `-` written `_`.
+
+| What | Name |
+|---|---|
+| The host port of an app | `<APP>_PORT` in `card.env`, set to the port in `card.yml`. Apps that are one process share the first one's variable, so list that app first. |
+| The Compose file that runs an app | The one that reads `${<APP>_PORT`. |
+| The serving device | `DEVICE` for a card with one place. `<PLACE>_DEVICE` for each place of a card with more. |
+| The Compose project | A top-level `name:` in each Compose file. |
+| The URL an app gives out | Built from `ORG_LABEL`, with an `<APP>_URL` override for your own domain. |
+| A secret | Empty in git, with a `# Generate with: <command>` comment above it. The check on the machine fills it with that command. |
+| A value the card cannot run without | `${VAR:?set VAR in card.env}` in the Compose file. |
+
 Check the file. `tools/run` runs it in a container, so Docker is all it needs. The first run builds that container. The same check runs on the pull request.
 
 ```bash
 tools/run check-cards cards/desk/card.yml
 ```
 
-`ok` means the file matches the schema and the directory name. Open a pull request. A maintainer merges it onto `main`. That merge is the publish. An update to a card that already exists is a pull request that changes that `card.yml`, and a maintainer decides whether the change belongs there.
+`ok` means the file matches the schema, the directory name, and the names in the table above. Open a pull request. A maintainer merges it onto `main`. That merge is the publish. An update to a card that already exists is a pull request that changes that `card.yml`, and a maintainer decides whether the change belongs there.
 
