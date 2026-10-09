@@ -33,7 +33,19 @@ mkdir -p cards/desk
 
 Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data.
 
-Write `cards/desk/README.md` with five headings: Why, What, How, Getting Started, and Tear down. Why is the problem this card solves. What is the apps and the places. How is how to fetch the card, edit `card.env`, start the Compose file, and publish. Getting Started comes after Publish. It is the sign-in for `org`, a key for `api-key`, and a small check that the hostname answers. Tear down is last, with the same four steps as every other card: Unpublish each app, Stop with `down`, Delete the data after copying each volume to a `.tgz`, and Remove the card. Copy the section from a card with the same shape, and change the names. Leave the app's own manual out of it. Leave device names, hostnames, organization ids, and passwords out of that file. The schema does not check it.
+Write `cards/desk/README.md` with five headings: Why, What, How, Verify, and Tear down. Copy the shape from a card like yours and change the names, so every card reads the same way.
+
+Why is the problem this card solves. What is the apps and the places. How is how to fetch the card, edit `card.env`, check the machine, start the Compose file, and publish.
+
+Verify comes after Publish. It checks the card, not the apps. Each app gets one check that its hostname answers the way its auth mode says: `none` with the app, `org` with a redirect to the Edgible sign-in, and `api-key` with `401` until a key is sent. Add the first sign-in when the app makes its admin on the first visit. End with a link to that app's docs.
+
+Tear down is last, with the same four steps as every other card: Unpublish each app, Stop with `down`, Delete the data after copying each volume to a `.tgz`, and Remove the card.
+
+A card holds what depends on Edgible or on another app in the card: hostnames, auth modes, devices, and how the apps reach each other. What is the same on any host belongs to the app: its users, its settings, and how to use it. Link to the app's docs. Do not copy them.
+
+An app that must know its own URL builds it from `ORG_LABEL` in `card.env`, as the n8n card does: `https://<app>.${ORG_LABEL}.edgible.com` is the hostname Publish generates, so nothing changes after Publish. For a URL on your own domain, add an override that wins over it, such as `${APP_URL:-https://app.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}`.
+
+Leave device names, hostnames, organization ids, and passwords out of the README. The schema does not check it.
 
 A picture is optional and is not part of the schema. Draw it from the card:
 

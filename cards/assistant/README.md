@@ -90,23 +90,35 @@ edgible app list
 
 `edgible app list` shows `assistant` with `org` and `ollama` with `api-key`.
 
-## Getting Started
+## Verify
 
-`edgible app list` prints each hostname.
+`edgible app list` prints each hostname. Each app answers the way its auth mode says: `none` with the app, `org` with a redirect to the Edgible sign-in, and `api-key` with `401` until a key is sent. This checks the card. The rest of each app's setup is in that app's docs.
 
-`assistant` uses `org`. Open that hostname and sign in. The first visit creates the Open WebUI admin. The rest of the setup is in Open WebUI. Upload `sample-help.pdf` and ask what the support hours are. The answer is weekdays 9 to 5.
+`assistant` uses `org`.
 
-`ollama` uses `api-key`. Create a key. The secret is shown once. The app id is the one `edgible app list` prints for `ollama`.
+```bash
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "https://<assistant hostname>"
+```
+
+That prints `302` and an `edgible.com/application-access/` address, so the org sign-in is in front. Open the hostname in a browser and sign in. The first visit creates the Open WebUI admin. Upload `assistant/etc/sample-help.pdf` and ask what the support hours are. The answer is weekdays 9 to 5, so the chat reached the model and read the document. The rest of the setup is in the [Open WebUI docs](https://docs.openwebui.com).
+
+`ollama` uses `api-key`. Without a key, it answers `401`.
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' "https://<ollama hostname>/api/tags"
+```
+
+Create a key. The secret is shown once. The app id is the one `edgible app list` prints for `ollama`.
 
 ```bash
 edgible app api-keys create --app-id <ollama-app-id> --name caller
 ```
 
 ```bash
-curl -fsS "https://<hostname>/api/tags" -H "Authorization: Bearer <secret>"
+curl -fsS "https://<ollama hostname>/api/tags" -H "Authorization: Bearer <secret>"
 ```
 
-A list of models means the hostname accepted the key.
+A response means the hostname accepted the key. The rest of the setup is in the [Ollama docs](https://docs.ollama.com).
 
 ## Tear down
 
