@@ -1,35 +1,33 @@
-# assistant
+# n8n
 
 ## Why
 
-Asking questions of your own documents usually means handing those files to someone else's chat. This card keeps the documents and the model on a machine you own. The chat asks for an org login. The model asks for an API key, so another machine you own can call it, and a stranger cannot.
+Moving work between systems usually goes to a hosted automation service, along with the keys to everything it touches. This card keeps that work on a machine you own. The editor asks for an org login. The webhook address stays open, because GitHub, Stripe, and `curl` cannot complete a browser login.
 
 ## What
 
-Both apps are the place `desk`, so they stay on one serving device. `assistant` is Open WebUI on port `8088`, behind an org login. `ollama` is the chat model and the embedding model on port `11434`, behind an API key. Open WebUI calls Ollama on the machine, not through the public hostname. The document index stays inside Open WebUI.
-
-Port `8088` is the host port. The website card already uses `8080` for nginx. The Compose file is [docker-compose.yml](docker-compose.yml). It reads the host ports from [card.env](card.env). The sample document is [etc/sample-help.pdf](etc/sample-help.pdf). The card is [card.yml](card.yml).
+Both apps are the place `workhorse`, so they stay on one serving device. They share port `5678`. The Compose file is [docker-compose.yml](docker-compose.yml). It runs Postgres and a task runner, and [init-data.sh](init-data.sh) sits next to it. The file reads the passwords, the host port, and `ORG_LABEL` from [card.env](card.env). The editor hostname is `n8n` plus that label. The webhook hostname is `n8n-hooks` plus that label. The card is [card.yml](card.yml).
 
 ## How
 
-Six steps. Edit [card.env](card.env) before you start. [docker-compose.yml](docker-compose.yml) reads the host ports from that file.
+Six steps. Edit [card.env](card.env) before you start. [docker-compose.yml](docker-compose.yml) reads that file.
 
 ### 1. Fetch
 
 On the machine that will run the containers, fetch this card. Running this again replaces `card.env`, including the device name and any password you filled in.
 
 ```bash
-mkdir -p assistant
+mkdir -p n8n
 curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
-  | tar -xz --strip-components=3 -C assistant cards-main/cards/assistant
+  | tar -xz --strip-components=2 -C n8n cards-main/n8n
 ```
 
 ### 2. Edit card.env
 
-Open `assistant/card.env` and follow the comments in that file.
+Open `n8n/card.env` and follow the comments in that file.
 
 ```bash
-nano assistant/card.env
+nano n8n/card.env
 ```
 
 ### 3. Check
@@ -37,32 +35,27 @@ nano assistant/card.env
 Check this machine before anything starts. The check reads `card.env` and looks for what the card would collide with: a host port, a container name, a Compose project, a leftover volume, a device name, or an app name. Each conflict prints its remedy. The report ends with those remedies as lines to paste into a shell: they fill empty secrets and change ports in `card.env`, keeping the old copy as `card.env.bak`. A line that stops or deletes something starts with `#`, so it runs only if you remove the `#`. Run the check again until it says `no conflicts`. It needs `python3` and Docker, and it uses `edgible` when that is installed.
 
 ```bash
-curl -fsSLo check-env.py https://raw.githubusercontent.com/Edgible/cards/main/tools/check-env.py
-python3 check-env.py assistant
+curl -fsSLo check-env.py https://raw.githubusercontent.com/Edgible/card-kit/main/check-env.py
+python3 check-env.py n8n
 ```
 
 ### 4. Start
 
 ```bash
-docker compose --env-file assistant/card.env -f assistant/docker-compose.yml up -d --wait
+docker compose --env-file n8n/card.env -f n8n/docker-compose.yml up -d --wait
 ```
 
 `--wait` returns when each service is running, and healthy when it has a healthcheck. A healthcheck comes from the Compose file or from the image. `ps` shows `(healthy)` in the status of each service that has one:
 
 ```bash
-docker compose --env-file assistant/card.env -f assistant/docker-compose.yml ps
+docker compose --env-file n8n/card.env -f n8n/docker-compose.yml ps
 ```
 
 If `--wait` stops with `unhealthy`, `logs <service>` with the same `--env-file` and `-f` usually says why.
 
-### 5. Pull the models
+### 5. Create the owner
 
-`qwen2.5:7b` is the chat model. `nomic-embed-text` is the embedding model. The pulls are large and stay on this machine.
-
-```bash
-docker exec ollama ollama pull qwen2.5:7b
-docker exec ollama ollama pull nomic-embed-text
-```
+Open `http://127.0.0.1:5678` and create the n8n owner. This account stays on this machine.
 
 ### 6. Publish
 
@@ -71,7 +64,7 @@ docker exec ollama ollama pull nomic-embed-text
 ```bash
 set -euo pipefail
 set -a
-. assistant/card.env
+. n8n/card.env
 set +a
 device_id=$(edgible device list --json | jq -er --arg name "$DEVICE" '
   map(select(.name == $name))
@@ -81,52 +74,42 @@ device_id=$(edgible device list --json | jq -er --arg name "$DEVICE" '
 ')
 edgible app create existing \
   --non-interactive \
-  --name assistant \
-  --port "$ASSISTANT_PORT" \
+  --name n8n \
+  --port "$N8N_PORT" \
   --protocol https \
   --auth-modes org \
   --device-id "$device_id"
 edgible app create existing \
   --non-interactive \
-  --name ollama \
-  --port "$OLLAMA_PORT" \
+  --name n8n-hooks \
+  --port "$N8N_PORT" \
   --protocol https \
-  --auth-modes api-key \
+  --auth-modes none \
   --device-id "$device_id"
 edgible app list
 ```
 
-`edgible app list` shows `assistant` with `org` and `ollama` with `api-key`.
+`edgible app list` shows `n8n` with `org` and `n8n-hooks` with `none`.
 
 ## Verify
 
 `edgible app list` prints each hostname. Each app answers the way its auth mode says: `none` with the app, `org` with a redirect to the Edgible sign-in, and `api-key` with `401` until a key is sent. This checks the card. The rest of each app's setup is in that app's docs.
 
-`assistant` uses `org`.
+`n8n` uses `org`.
 
 ```bash
-curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "https://<assistant hostname>"
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' "https://<n8n hostname>"
 ```
 
-That prints `302` and an `edgible.com/application-access/` address, so the org sign-in is in front. Open the hostname in a browser and sign in. The first visit creates the Open WebUI admin. Upload `assistant/etc/sample-help.pdf` and ask what the support hours are. The answer is weekdays 9 to 5, so the chat reached the model and read the document. The rest of the setup is in the [Open WebUI docs](https://docs.openwebui.com).
+That prints `302` and an `edgible.com/application-access/` address, so the org sign-in is in front. Open the hostname in a browser and sign in. The owner is the account you created on `127.0.0.1:5678`. The rest of the setup is in the [n8n docs](https://docs.n8n.io).
 
-`ollama` uses `api-key`. Without a key, it answers `401`.
+`n8n-hooks` uses `none`.
 
 ```bash
-curl -sS -o /dev/null -w '%{http_code}\n' "https://<ollama hostname>/api/tags"
+curl -fsS "https://<n8n-hooks hostname>/healthz"
 ```
 
-Create a key. The secret is shown once. The app id is the one `edgible app list` prints for `ollama`.
-
-```bash
-edgible app api-keys create --app-id <ollama-app-id> --name caller
-```
-
-```bash
-curl -fsS "https://<ollama hostname>/api/tags" -H "Authorization: Bearer <secret>"
-```
-
-A response means the hostname accepted the key. The rest of the setup is in the [Ollama docs](https://docs.ollama.com).
+That prints `{"status":"ok"}` from n8n, not the Edgible sign-in.
 
 ## Tear down
 
@@ -137,8 +120,8 @@ Four steps, in this order. Step 1 runs wherever `edgible` is logged in. Steps 2 
 Delete the apps first, so no hostname points at a stopped container, and the names are free if you set the card up again.
 
 ```bash
-edgible app delete assistant --yes
-edgible app delete ollama --yes
+edgible app delete n8n --yes
+edgible app delete n8n-hooks --yes
 ```
 
 ### 2. Stop
@@ -146,7 +129,7 @@ edgible app delete ollama --yes
 This stops and removes the containers. The volumes stay, so Start brings the card back with its data.
 
 ```bash
-docker compose --env-file assistant/card.env -f assistant/docker-compose.yml down
+docker compose --env-file n8n/card.env -f n8n/docker-compose.yml down
 ```
 
 ### 3. Delete the data
@@ -154,16 +137,16 @@ docker compose --env-file assistant/card.env -f assistant/docker-compose.yml dow
 Skip this step to keep the data. It cannot be undone. The loop first copies each volume to a `.tgz` file in this directory. The containers are stopped, so each copy is whole.
 
 ```bash
-for volume in $(docker volume ls -q --filter label=com.docker.compose.project=assistant); do
+for volume in $(docker volume ls -q --filter label=com.docker.compose.project=n8n); do
   docker run --rm -v "$volume:/data:ro" -v "$PWD:/backup" alpine tar -czf "/backup/$volume.tgz" -C /data .
 done
-docker compose --env-file assistant/card.env -f assistant/docker-compose.yml down --volumes
+docker compose --env-file n8n/card.env -f n8n/docker-compose.yml down --volumes
 ```
 
 To bring a copy back, keep the `card.env` it was made with, because the databases in it expect those passwords. `create` makes the containers and the volumes without starting them. Unpack each copy into its volume, then Start.
 
 ```bash
-docker compose --env-file assistant/card.env -f assistant/docker-compose.yml create
+docker compose --env-file n8n/card.env -f n8n/docker-compose.yml create
 docker run --rm -v "<volume>:/data" -v "$PWD:/backup" alpine tar -xzf "/backup/<volume>.tgz" -C /data
 ```
 
@@ -172,5 +155,5 @@ docker run --rm -v "<volume>:/data" -v "$PWD:/backup" alpine tar -xzf "/backup/<
 `card.env` holds the passwords, and `card.env.bak` holds the copy from before the check edited it. If you kept the volumes in step 3, keep `card.env` too. The databases in those volumes expect its passwords.
 
 ```bash
-rm -rf assistant
+rm -rf n8n
 ```
