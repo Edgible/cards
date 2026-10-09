@@ -148,3 +148,87 @@ curl -fsS "https://<hostname>/script.js"
 `umami` uses `org`. Open that hostname and sign in. The first visit creates the Umami admin. The rest of the setup is in Umami.
 
 `status` uses `org`. Open that hostname and sign in. The first visit creates the Uptime Kuma admin. The rest of the setup is in Uptime Kuma.
+
+## Tear down
+
+Four steps, in this order. Step 1 runs wherever `edgible` is logged in. Steps 2 to 4 run on the machine for each place. Steps 2 and 3 read `card.env`, so keep it until step 4.
+
+### 1. Unpublish
+
+Delete the apps first, so no hostname points at a stopped container, and the names are free if you set the card up again.
+
+```bash
+edgible app delete site --yes
+edgible app delete strapi --yes
+edgible app delete analytics --yes
+edgible app delete umami --yes
+edgible app delete status --yes
+```
+
+### 2. Stop
+
+This stops and removes the containers. The volumes stay, so Start brings the card back with its data.
+
+On the machine for place `web`:
+
+```bash
+docker compose --env-file website/card.env -f website/docker-compose.yml down
+docker compose --env-file website/card.env -f website/umami-compose.yml down
+```
+
+On the machine for place `monitor`:
+
+```bash
+docker compose --env-file website/card.env -f website/kuma-compose.yml down
+```
+
+### 3. Delete the data
+
+Skip this step to keep the data. It cannot be undone. The loop first copies each volume to a `.tgz` file in this directory. The containers are stopped, so each copy is whole.
+
+On the machine for place `web`:
+
+```bash
+for volume in $(docker volume ls -q --filter label=com.docker.compose.project=site); do
+  docker run --rm -v "$volume:/data:ro" -v "$PWD:/backup" alpine tar -czf "/backup/$volume.tgz" -C /data .
+done
+for volume in $(docker volume ls -q --filter label=com.docker.compose.project=umami); do
+  docker run --rm -v "$volume:/data:ro" -v "$PWD:/backup" alpine tar -czf "/backup/$volume.tgz" -C /data .
+done
+docker compose --env-file website/card.env -f website/docker-compose.yml down --volumes
+docker compose --env-file website/card.env -f website/umami-compose.yml down --volumes
+```
+
+On the machine for place `monitor`:
+
+```bash
+for volume in $(docker volume ls -q --filter label=com.docker.compose.project=status); do
+  docker run --rm -v "$volume:/data:ro" -v "$PWD:/backup" alpine tar -czf "/backup/$volume.tgz" -C /data .
+done
+docker run --rm -v "$PWD/website/data:/data:ro" -v "$PWD:/backup" alpine tar -czf "/backup/status-data.tgz" -C /data .
+docker compose --env-file website/card.env -f website/kuma-compose.yml down --volumes
+docker run --rm -v "$PWD/website:/card" alpine rm -rf "/card/data"
+```
+
+Uptime Kuma keeps its data in the folder `website/data`, not in a volume, so the `monitor` step copies that folder to `status-data.tgz` and then removes it. Both run in a container, because the folder belongs to the container's user.
+
+To bring a copy back, keep the `card.env` it was made with, because the databases in it expect those passwords. `create` makes the containers and the volumes without starting them. Unpack each copy into its volume, then Start.
+
+```bash
+docker compose --env-file website/card.env -f website/docker-compose.yml create
+docker compose --env-file website/card.env -f website/umami-compose.yml create
+docker compose --env-file website/card.env -f website/kuma-compose.yml create
+docker run --rm -v "<volume>:/data" -v "$PWD:/backup" alpine tar -xzf "/backup/<volume>.tgz" -C /data
+docker run --rm -v "$PWD/website/data:/data" -v "$PWD:/backup" alpine tar -xzf "/backup/status-data.tgz" -C /data
+```
+
+### 4. Remove the card
+
+`card.env` holds the passwords, and `card.env.bak` holds the copy from before the check edited it. If you kept the volumes in step 3, keep `card.env` too. The databases in those volumes expect its passwords.
+
+```bash
+docker image rm website-site:latest website-strapi:latest
+rm -rf website
+```
+
+The card built those two images. The images it pulled stay, because other containers may use them. `docker image prune` removes the ones nothing uses.

@@ -33,7 +33,7 @@ mkdir -p cards/desk
 
 Write `cards/desk/card.yml` so `metadata.name` is `desk` and the file satisfies [tools/card.schema.json](tools/card.schema.json). Leave out `deviceName`, `deviceId`, `organization`, hostnames, passwords, and volume data.
 
-Write `cards/desk/README.md` with four headings: Why, What, How, and Getting Started. Why is the problem this card solves. What is the apps and the places. How is how to fetch the card, edit `card.env`, start the Compose file, and publish. Getting Started comes after Publish. It is the sign-in for `org`, a key for `api-key`, and a small check that the hostname answers. Leave the app's own manual out of it. Leave device names, hostnames, organization ids, and passwords out of that file. The schema does not check it.
+Write `cards/desk/README.md` with five headings: Why, What, How, Getting Started, and Tear down. Why is the problem this card solves. What is the apps and the places. How is how to fetch the card, edit `card.env`, start the Compose file, and publish. Getting Started comes after Publish. It is the sign-in for `org`, a key for `api-key`, and a small check that the hostname answers. Tear down is last, with the same four steps as every other card: Unpublish each app, Stop with `down`, Delete the data after copying each volume to a `.tgz`, and Remove the card. Copy the section from a card with the same shape, and change the names. Leave the app's own manual out of it. Leave device names, hostnames, organization ids, and passwords out of that file. The schema does not check it.
 
 A picture is optional and is not part of the schema. Draw it from the card:
 

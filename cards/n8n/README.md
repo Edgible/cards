@@ -94,3 +94,50 @@ edgible app list
 ```bash
 curl -fsS "https://<hostname>"
 ```
+
+## Tear down
+
+Four steps, in this order. Step 1 runs wherever `edgible` is logged in. Steps 2 to 4 run on the machine that runs the containers. Steps 2 and 3 read `card.env`, so keep it until step 4.
+
+### 1. Unpublish
+
+Delete the apps first, so no hostname points at a stopped container, and the names are free if you set the card up again.
+
+```bash
+edgible app delete n8n --yes
+edgible app delete n8n-hooks --yes
+```
+
+### 2. Stop
+
+This stops and removes the containers. The volumes stay, so Start brings the card back with its data.
+
+```bash
+docker compose --env-file n8n/card.env -f n8n/docker-compose.yml down
+```
+
+### 3. Delete the data
+
+Skip this step to keep the data. It cannot be undone. The loop first copies each volume to a `.tgz` file in this directory. The containers are stopped, so each copy is whole.
+
+```bash
+for volume in $(docker volume ls -q --filter label=com.docker.compose.project=n8n); do
+  docker run --rm -v "$volume:/data:ro" -v "$PWD:/backup" alpine tar -czf "/backup/$volume.tgz" -C /data .
+done
+docker compose --env-file n8n/card.env -f n8n/docker-compose.yml down --volumes
+```
+
+To bring a copy back, keep the `card.env` it was made with, because the databases in it expect those passwords. `create` makes the containers and the volumes without starting them. Unpack each copy into its volume, then Start.
+
+```bash
+docker compose --env-file n8n/card.env -f n8n/docker-compose.yml create
+docker run --rm -v "<volume>:/data" -v "$PWD:/backup" alpine tar -xzf "/backup/<volume>.tgz" -C /data
+```
+
+### 4. Remove the card
+
+`card.env` holds the passwords, and `card.env.bak` holds the copy from before the check edited it. If you kept the volumes in step 3, keep `card.env` too. The databases in those volumes expect its passwords.
+
+```bash
+rm -rf n8n
+```
