@@ -80,3 +80,7 @@ tools/run check-cards cards/desk/card.yml
 
 `ok` means the file matches the schema, the directory name, and the names in the table above. Open a pull request. A maintainer merges it onto `main`. That merge is the publish. An update to a card that already exists is a pull request that changes that `card.yml`, and a maintainer decides whether the change belongs there.
 
+
+## License
+
+Everything in this repo, the cards and the tools, is under the [MIT License](LICENSE). A card you contribute is shared under the same license. The apps a card runs keep their own licenses.
