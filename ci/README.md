@@ -61,11 +61,27 @@ docker compose --env-file ci/card.env -f ci/docker-compose.yml ps
 `--wait` returns when each service is running, and healthy when it has a healthcheck. Then make the admin on place `forge`, before Publish:
 
 ```bash
-set -a; . ci/card.env; set +a
-docker compose --env-file ci/card.env -f ci/docker-compose.yml exec -u git gitea \
+sh ci/prepare.sh
+```
+
+[prepare.sh](prepare.sh) is:
+
+```sh
+#!/bin/sh
+# Prepare for the ci card: make Gitea's admin on place forge, before Publish.
+# Run it on the forge machine after Start and before Publish, from the directory that holds ci/:
+#   sh ci/prepare.sh
+set -eu
+cd "$(dirname "$0")"
+set -a; . ./card.env; set +a
+COMPOSE=${COMPOSE:-docker compose --env-file card.env -f docker-compose.yml}
+
+$COMPOSE exec -T -u git gitea \
   gitea admin user create --admin --username gitadmin \
   --password "$GITEA_ADMIN_PASSWORD" --email "$GITEA_ADMIN_EMAIL" --must-change-password=false
 ```
+
+It prints `New user 'gitadmin' has been successfully created!` Gitea reserves the name `admin`, so the admin is `gitadmin`.
 
 ### 5. Publish
 
