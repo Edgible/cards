@@ -50,6 +50,10 @@ Check it. `run` uses Docker, so Docker is all it needs. The same check runs on t
 
 Open a pull request. A maintainer merges it onto `main`. That merge is the publish. An update to a card that already exists is a pull request that changes that card, and a maintainer decides whether the change belongs there.
 
+## Contributing
+
+How to add a card, fix one, or ask for one is in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 Everything in this repo is under the [MIT License](LICENSE). A card you contribute is shared under the same license. The apps a card runs keep their own licenses.
