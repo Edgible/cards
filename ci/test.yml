@@ -1,7 +1,8 @@
 tested: 2026-10-10
 result: pass
-card-kit: c2f3407
+card-kit: 68b9a2e
 edgible-cli: 1.4.6
+files: sha256:e11badec5203a3d6
 machine: darwin/arm64, docker 29.4.3
 images:
   - docker.gitea.com/act_runner:5.0.0@sha256:328b8dad8de80a19dab6c5c61292c1d624cd3460c25a5c0067e95c11318657ca
@@ -20,12 +21,12 @@ steps:
   teardown: pass
 measured:
   forge:
-    memory: 171 MB
+    memory: 165 MB
     images: 184 MB
-    data: 74 MB
+    data: 58 MB
   runner:
-    memory: 15 MB
+    memory: 14 MB
     images: 19 MB
     data: 8 KB
-duration: 10m
+duration: 4m
 by: agent
