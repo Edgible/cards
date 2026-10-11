@@ -1,14 +1,82 @@
 {
   "meta": {
     "date": "2026-10-11",
-    "rotation_day": 6,
+    "rotation_day": null,
     "card_kit": "b39a7bb",
     "claude": "2.1.296 (Claude Code)",
     "mcp": "edgible find and describe",
-    "not_run": [
-      "s3-members-area"
-    ],
-    "stopped": "s3-members-area: Not logged in \u00b7 Please run /login"
+    "not_run": [],
+    "stopped": ""
   },
-  "results": []
+  "results": [
+    {
+      "id": "negative-react-error",
+      "pass": true,
+      "should_load": false,
+      "loaded": false,
+      "loaded_at": null,
+      "tools": [
+        "Glob",
+        "Glob"
+      ],
+      "expect_passed": 1,
+      "expect_total": 1,
+      "must_not_violated": [],
+      "principles_failed": [],
+      "verdict": {
+        "expect": [
+          {
+            "item": "the skill does not load",
+            "pass": true,
+            "evidence": "The answer is an ordinary React debugging reply (\"Line 14 does something like `products.map(...)`, and on at least one render `products` is `undefined`\"). It shows no hosting or deployment skill content."
+          }
+        ],
+        "must_not": [
+          {
+            "item": "mention self-hosting or Edgible",
+            "violated": false,
+            "evidence": "The answer never mentions self-hosting, Edgible, deployment or hosting."
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "It goes straight to the error. It says the file isn't in the directory, then explains the cause and gives fixes (\"start it as an empty array\")."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": null,
+            "evidence": "Hosting isn't relevant to fixing a React TypeError."
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": true,
+            "evidence": "It makes one request that changes the fix: \"If you share `ProductList.jsx` and the code that fetches or passes the products, I'll tell you which cause it is.\""
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "It doesn't claim to have edited anything: \"I couldn't find `ProductList.jsx`... You can paste the file here.\""
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": null,
+            "evidence": "No hostnames or auth are involved."
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": null,
+            "evidence": "The request doesn't involve sensitive data or access control."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": null,
+            "evidence": "Nothing here is a poor fit that should be declined."
+          }
+        ],
+        "better": ""
+      }
+    }
+  ]
 }
