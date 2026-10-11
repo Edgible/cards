@@ -1,0 +1,125 @@
+# The edgible-cards skill's evals, a small batch each night. See HOW-IT-WORKS.md.
+#
+# card-kit's run-evals.py --rotate today answers tonight's share of the held-out prompts
+# (prompt i runs on weekday i mod 7, so each runs once a week), in read-only Claude sessions
+# with the skill, and a second session judges each answer. Results go to the eval-results
+# branch; eval-summary.py combines the last seven nights into the "Skill eval report" issue.
+#
+# It runs Claude on the runner's logged-in subscription, so it runs in small batches, never
+# on a pull request: only on the schedule, or by hand.
+
+name: skill-evals
+
+on:
+  schedule:
+    # Daily at 18:00 UTC, after the regression.
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: Run these prompt ids instead of tonight's share, separated by spaces
+        type: string
+        default: ""
+
+permissions:
+  contents: write   # push results to the eval-results branch
+  issues: write     # keep the report issue up to date
+
+concurrency:
+  group: skill-evals
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  evals:
+    # The runner's machine has the claude CLI signed in to a subscription, and the
+    # edgible-mcp server, whose find and describe tools the answering sessions may use.
+    runs-on: [self-hosted, edgible-test]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cards
+
+      - name: Fetch card-kit and the earlier results
+        run: |
+          set -euo pipefail
+          rm -rf card-kit results
+          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          if git -C cards ls-remote --exit-code --heads origin eval-results >/dev/null; then
+            git -C cards fetch -q --depth 1 origin eval-results
+            git -C cards worktree add -q ../results FETCH_HEAD
+          else
+            mkdir results
+          fi
+          echo "card-kit $(git -C card-kit rev-parse --short HEAD), $(claude --version)"
+
+      - name: Run tonight's prompts
+        env:
+          ONLY: ${{ inputs.only }}
+        run: |
+          set -euo pipefail
+          args=(--rotate today)
+          if [ -n "$ONLY" ]; then
+            if ! [[ "$ONLY" =~ ^[a-z0-9\ -]+$ ]]; then echo "only: prompt ids, separated by spaces" >&2; exit 2; fi
+            read -ra ids <<< "$ONLY"
+            args=(--only "${ids[@]}")
+          fi
+          day=$(date -u +%F)
+          # 0: every prompt passed; 1: some failed, which is what the report is for;
+          # 2: stopped early, such as at the subscription's usage limit.
+          python3 card-kit/skills/edgible-cards/evals/run-evals.py "${args[@]}" --out "night/$day" && rc=0 || rc=$?
+          echo "run-evals exited $rc"
+          if [ "$rc" = 2 ]; then echo "::warning::stopped early; see report.md for the prompts not run"; fi
+          [ -f "night/$day/results.json" ] || { echo "no results written" >&2; exit 1; }
+
+      - name: Save the results
+        run: |
+          set -euo pipefail
+          day=$(date -u +%F)
+          mkdir -p "results/$day"
+          # A second run on the same day adds its prompts to that day's results.
+          python3 - "night/$day/results.json" "results/$day/results.json" <<'PY'
+          import json, sys, pathlib
+          new, old = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+          run = json.loads(new.read_text())
+          if old.exists():
+              before = json.loads(old.read_text())
+              ids = {r["id"] for r in run["results"]}
+              run["results"] = [r for r in before["results"] if r["id"] not in ids] + run["results"]
+          old.write_text(json.dumps(run, indent=2) + "\n")
+          PY
+          cp "night/$day/report.md" "results/$day/report.md"
+          python3 card-kit/skills/edgible-cards/evals/eval-summary.py results > results/README.md
+          cd results
+          [ -e .git ] || git init -q -b eval-results
+          git add -A
+          if git diff --cached --quiet; then echo "results unchanged"; exit 0; fi
+          git -c user.name="skill evals" -c user.email="actions@github.com" \
+            commit -q -m "Evals from $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          git push -q "https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY.git" HEAD:eval-results
+
+      - name: Update the report issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          title="Skill eval report"
+          {
+            cat results/README.md
+            echo
+            echo "Updated by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Each night's results are on the [eval-results branch]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/eval-results)."
+          } > issue.md
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -1)
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --repo "$GITHUB_REPOSITORY" --body-file issue.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file issue.md
+          fi
+
+      - name: Clean up
+        if: always()
+        run: git -C cards worktree remove --force ../results 2>/dev/null || rm -rf results
