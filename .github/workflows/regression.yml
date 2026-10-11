@@ -125,6 +125,20 @@ jobs:
               --body "The regression found \`$card\` failing on Edgible $(jq -r --arg c "$card" '.[$c]["edgible-cli"]' status/status.json). The run, with the failing step: $run"
           done
 
+      - name: Close the issue of each card that passes again
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [ -f status/status.json ] || exit 0
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          for card in $(jq -r 'to_entries[] | select(.value.result == "pass") | .key' status/status.json); do
+            title="Regression: $card fails"
+            for number in $(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number"); do
+              gh issue close "$number" --repo "$GITHUB_REPOSITORY" --comment "Passes again: $run"
+            done
+          done
+
       - name: Fail when a card failed
         run: |
           rc=$(cat result 2>/dev/null || echo 2)

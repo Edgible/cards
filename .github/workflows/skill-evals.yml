@@ -12,8 +12,9 @@ name: skill-evals
 
 on:
   schedule:
-    # Daily at 18:00 UTC, after the regression.
-    - cron: "0 18 * * *"
+    # Daily at 13:00 UTC (23:30 in Adelaide in summer): early, so the subscription's usage
+    # window it opens has closed before the working day.
+    - cron: "0 13 * * *"
   workflow_dispatch:
     inputs:
       only:
@@ -62,11 +63,13 @@ jobs:
           ONLY: ${{ inputs.only }}
         run: |
           set -euo pipefail
-          args=(--rotate today)
+          # The judge scores against a written checklist, so a smaller model does; answering
+          # sessions keep the default, as people use it.
+          args=(--rotate today --judge-model sonnet)
           if [ -n "$ONLY" ]; then
             if ! [[ "$ONLY" =~ ^[a-z0-9\ -]+$ ]]; then echo "only: prompt ids, separated by spaces" >&2; exit 2; fi
             read -ra ids <<< "$ONLY"
-            args=(--only "${ids[@]}")
+            args=(--only "${ids[@]}" --judge-model sonnet)
           fi
           day=$(date -u +%F)
           # 0: every prompt passed; 1: some failed, which is what the report is for;
