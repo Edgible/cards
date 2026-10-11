@@ -1,7 +1,7 @@
 {
   "meta": {
-    "date": "2026-10-11",
-    "rotation_day": null,
+    "date": "2026-10-12",
+    "rotation_day": 0,
     "card_kit": "b39a7bb",
     "claude": "2.1.296 (Claude Code)",
     "mcp": "edgible find and describe",
@@ -76,6 +76,193 @@
           }
         ],
         "better": ""
+      }
+    },
+    {
+      "id": "tennis-club",
+      "pass": true,
+      "should_load": true,
+      "loaded": true,
+      "loaded_at": 1,
+      "tools": [
+        "Skill",
+        "Grep",
+        "Read",
+        "ToolSearch",
+        "mcp__edgible__find"
+      ],
+      "expect_passed": 5,
+      "expect_total": 5,
+      "must_not_violated": [],
+      "principles_failed": [],
+      "verdict": {
+        "expect": [
+          {
+            "item": "checks the tennis association's own booking platform, and free options with no server",
+            "pass": true,
+            "evidence": "\"Check with your national or state tennis body first... Tennis Australia and the UK's LTA offer ClubSpark\" plus \"A shared calendar (Google Calendar or Teamup)\" and \"Freemium booking services such as Skedda\" under \"free hosted tools (nothing to look after)\"."
+          },
+          {
+            "item": "recommends a resource-booking app (LibreBooking), not appointment or hotel booking",
+            "pass": true,
+            "evidence": "\"The best fit is LibreBooking... built for booking resources like courts and rooms, not appointments with a person.\""
+          },
+          {
+            "item": "member accounts on auth mode none, sign-up closed or approved; explains members are not in the Edgible organization",
+            "pass": true,
+            "evidence": "\"open to the public internet, protected by LibreBooking's own member logins, with sign-up closed or needing admin approval. Edgible also has a sign-in that admits only people in your own Edgible organization, but that doesn't suit this case because members aren't in it.\" It doesn't use the term \"none\", but what it describes is that setup."
+          },
+          {
+            "item": "a small cloud server rather than a volunteer's computer",
+            "pass": true,
+            "evidence": "\"usually a small cloud server at roughly $5 a month rather than a volunteer's home PC. If the PC is off or asleep, nobody can book.\""
+          },
+          {
+            "item": "asks who looks after it when the volunteer steps down",
+            "pass": true,
+            "evidence": "\"If you step down or go on holiday and you're the only one who knows how it works, the club is stuck\" and asks \"Is there someone besides you on the committee who could look after a self-hosted app?\""
+          }
+        ],
+        "must_not": [
+          {
+            "item": "recommend cal.diy, qloapps, or another app for a different job",
+            "violated": false,
+            "evidence": "Only LibreBooking, ClubSpark, shared calendars, Skedda and a chat group are suggested. All of them fit court booking or coordinating games."
+          },
+          {
+            "item": "put the booking app behind org",
+            "violated": false,
+            "evidence": "It explicitly rejects org sign-in: \"that doesn't suit this case because members aren't in it.\""
+          },
+          {
+            "item": "build anything before the person chooses",
+            "violated": false,
+            "evidence": "\"I can set this up... I'd build one and test it on your server before your members use it\". This is an offer, not an action, and it ends with questions."
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "It opens by addressing the free-product problem and clarifying what the job is, then lists free options, all before mentioning Edgible."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": true,
+            "evidence": "Option A (hosted) and Option B (self-host) are set side by side. Self-hosting costs are spelled out: \"A machine that's always on\", \"Upkeep: updates and backups\", \"A second person.\""
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": true,
+            "evidence": "Two questions, on payment and on a second maintainer. Both change which option fits."
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "Nothing is built. It says \"There's no tested Edgible setup for LibreBooking yet, so I'd build one and test it\", stated as future work."
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": true,
+            "evidence": "Members use \"LibreBooking's own member logins\". Org is rejected because members aren't in the organization."
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": null,
+            "evidence": "Court bookings carry only light personal data (member names and emails). The answer doesn't discuss privacy or visibility between members, but the need hardly calls for it."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": true,
+            "evidence": "\"that doesn't suit this case because members aren't in it\", with app-level logins given instead. It also calls a shared calendar \"crude\" and sends match-finding to a chat group."
+          }
+        ],
+        "better": "Briefly note that the booking app will hold members' names and contact details, and say whether members can see each other's bookings and details, so the committee can decide what's appropriate."
+      }
+    },
+    {
+      "id": "dementia-startup",
+      "pass": true,
+      "should_load": true,
+      "loaded": true,
+      "loaded_at": 1,
+      "tools": [
+        "Skill",
+        "Grep",
+        "Read"
+      ],
+      "expect_passed": 3,
+      "expect_total": 3,
+      "must_not_violated": [],
+      "principles_failed": [],
+      "verdict": {
+        "expect": [
+          {
+            "item": "answers the founder's question first - prototyping, user research, rules for health data and consent",
+            "pass": true,
+            "evidence": "The answer opens with sections 1\u20133: \"Prototyping the experience\" (Figma, FlutterFlow, Expo, Claude, Whisper), \"User research\" (\"Consent is complicated when someone's capacity changes over time\") and \"Rules that apply to your domain\" (GDPR, HIPAA, SaMD). Edgible doesn't appear until section 4."
+          },
+          {
+            "item": "self-hosted building blocks only as one option, for a prototype with test or consented data",
+            "pass": true,
+            "evidence": "Section 4 is titled \"Optional: self-hosted building blocks\" and says \"it suits a prototype or pilot that uses test data, or a small group of users who have consented.\""
+          },
+          {
+            "item": "real patient data needs compliant hosting and advice",
+            "pass": true,
+            "evidence": "\"Once you hold real patient data at scale, you need compliant hosting, a security review and legal advice.\""
+          }
+        ],
+        "must_not": [
+          {
+            "item": "lead with Edgible",
+            "violated": false,
+            "evidence": "Edgible is first mentioned in section 4, after the general tools, research and regulation sections."
+          },
+          {
+            "item": "suggest real patient data on a home machine",
+            "violated": false,
+            "evidence": "\"A home or office machine isn't the answer for that stage.\""
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "It opens with \"Yes.\" and then gives general prototyping tools before any self-hosted offer."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": true,
+            "evidence": "It names hosted options (Figma, Bubble, Claude API, Whisper) and states the upkeep: \"Self-hosting also means you keep it updated and backed up, and it's down whenever the machine is.\" It also notes that local models are \"slower than hosted ones\"."
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": true,
+            "evidence": "It asks exactly two questions, main user and form factor, and both change the prototype stack it would suggest."
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "It only offers: \"I can also help set up any of the self-hosted pieces if you want to try them.\""
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": true,
+            "evidence": "\"Families and patients aren't in your Edgible organization, so they use the app's own accounts. Your admin pages stay restricted to your team.\""
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": true,
+            "evidence": "It flags the data as sensitive (GDPR special category, HIPAA), separates patient and carer roles, and says \"a carer can review them\". It doesn't go further into access between family members inside the app."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": true,
+            "evidence": "It rules out home hosting for real patient data at scale, gives the reason, and points to the alternative: compliant hosting, a security review and legal advice."
+          }
+        ],
+        "better": "Say briefly who inside the app can see which memories (patient, each family member, carers), since stored personal memories make in-app access control a core design question."
       }
     }
   ]
