@@ -1,8 +1,8 @@
-tested: 2026-10-10
+tested: 2026-10-11
 result: pass
-card-kit: 68b9a2e
+card-kit: "e011965"
 edgible-cli: 1.4.6
-files: sha256:e11badec5203a3d6
+files: sha256:34e3e0c39db9c001
 machine: darwin/arm64, docker 29.4.3
 images:
   - docker.gitea.com/act_runner:5.0.0@sha256:328b8dad8de80a19dab6c5c61292c1d624cd3460c25a5c0067e95c11318657ca
@@ -25,8 +25,9 @@ measured:
     images: 184 MB
     data: 58 MB
   runner:
-    memory: 14 MB
+    memory: 16 MB
     images: 19 MB
     data: 8 KB
 duration: 4m
 by: agent
+notes: gitea's port 3003 was taken on the test machine, so it was tested on 3004. gitea-ssh's port 22222 was taken on the test machine, so it was tested on 22223. gitea is taken in the test org, so it was published as test-gitea. gitea-ssh is taken in the test org, so it was published as test-gitea-ssh.

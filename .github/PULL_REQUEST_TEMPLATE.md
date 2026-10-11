@@ -1,11 +1,13 @@
 ## What
 
-<!-- A new card, or a change to one. For a new card: what the pattern is for, its apps and places, and the starters it was built from. For a change: what was wrong. -->
+<!-- A new card, or a change to one. Say whether it is an app card or a pattern.
+     A new app card: the app, what it is for, and a link to it. A new pattern: what it is for, its apps and places, and the app cards it was built from.
+     A change: what was wrong. Link an issue if there is one. -->
 
 ## Test
 
-<!-- The last lines of `python3 ../card-kit/test-card.py <name> --device <your-device>`, from `result:`, if you ran it.
-     Leave out device names, hostnames, and anything secret. -->
+<!-- The last lines of `python3 ../card-kit/test-card.py <name> --device <your-device>`, from `result:`.
+     Required for an app card. Leave out device names, hostnames, and anything secret. -->
 
 ```
 result:
@@ -13,15 +15,15 @@ result:
 
 ## Review
 
-Tick what you checked.
+From [Reviewing a card](https://github.com/Edgible/cards/blob/main/README.md#reviewing-a-card). Tick what you checked.
 
 - [ ] Default passwords are changed or generated, and the README says how to sign in the first time.
 - [ ] Every secret is empty in git, with a `# Generate with:` comment.
-- [ ] The auth mode of each hostname suits its callers.
-- [ ] The README has Why, What, How, Verify, and Tear down, and Tear down backs up each volume before deleting it.
-- [ ] Names say which app they belong to, with no `container_name`, so the card runs beside others on one machine.
+- [ ] The auth mode of each hostname suits its callers, by the README's table.
+- [ ] The README says where the data lives, and Tear down backs it up before deleting it.
+- [ ] `test.yml` passes, and its images are the ones in the Compose files. An app card must have one.
 - [ ] Nothing names a device, a hostname, or an organization.
-- [ ] `check-cards` passes.
-- [ ] `test.yml` passes, if the card has one, and its images are the ones in the Compose files.
+- [ ] `check-cards --fresh` passes.
+- [ ] An app card's app is not on [What is not an app card](https://github.com/Edgible/cards/blob/main/README.md#what-is-not-an-app-card).
 
 - [ ] An AI agent made this pull request, and I have read what it wrote.

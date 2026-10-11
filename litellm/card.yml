@@ -3,6 +3,7 @@ kind: Card
 metadata:
   name: litellm
   description: Metered model API and its admin, one LiteLLM process
+  type: pattern
 
 applications:
   - name: litellm

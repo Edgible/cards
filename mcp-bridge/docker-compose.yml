@@ -1,0 +1,53 @@
+# Compose file for the mcp-bridge card.
+# The host port and the MCP server to run come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+# The healthcheck starts the MCP server and pings it, so healthy means the server works.
+
+name: mcp-bridge
+
+services:
+  mcp-bridge:
+    # Supergateway serves a stdio MCP server over Streamable HTTP. The -uvx image has
+    # Node (npx) and Python with uv (uvx), so it runs servers from npm and from PyPI.
+    image: supercorp/supergateway:4.1.0-uvx
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MCP_BRIDGE_PORT:?set MCP_BRIDGE_PORT in card.env}:8000"
+    command:
+      - --stdio
+      - ${MCP_BRIDGE_COMMAND:?set MCP_BRIDGE_COMMAND in card.env}
+      - --outputTransport
+      - streamableHttp
+      # One server process per client session, ended after 10 idle minutes.
+      - --stateful
+      - --sessionTimeout
+      - "600000"
+      - --port
+      - "8000"
+      - --healthEndpoint
+      - /healthz
+      - --healthCheck
+      - server
+    # Settings and secrets for the MCP server itself, such as an access token, if it needs any.
+    env_file:
+      - path: ./server.env
+        required: false
+    environment:
+      npm_config_cache: /root/.cache/npm
+      UV_CACHE_DIR: /root/.cache/uv
+    working_dir: /data
+    volumes:
+      # Downloaded packages, so a restart does not fetch the server again.
+      - mcp-bridge-cache:/root/.cache
+      # Files the MCP server keeps, for servers that keep any.
+      - mcp-bridge-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz | grep -q ok"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 3m
+
+volumes:
+  mcp-bridge-cache: {}
+  mcp-bridge-data: {}

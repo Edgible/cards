@@ -1,0 +1,32 @@
+# Compose file for the minecraft card: one Paper server, with Geyser and Floodgate so
+# Bedrock players join the same world. Ports and the EULA come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+# The image's own healthcheck applies.
+
+name: minecraft
+
+services:
+  minecraft:
+    image: itzg/minecraft-server:2026.9.2
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MC_JAVA_PORT:?set MC_JAVA_PORT in card.env}:25565"
+      - "127.0.0.1:${MC_BEDROCK_PORT:?set MC_BEDROCK_PORT in card.env}:19132/udp"
+    environment:
+      EULA: ${MINECRAFT_EULA:?read https://www.minecraft.net/eula and set MINECRAFT_EULA in card.env}
+      TYPE: PAPER
+      VERSION: "26.2"
+      MEMORY: 2G
+      MOTD: ${MINECRAFT_MOTD:-Game night}
+      # A TCP or UDP app has no auth mode, so the game decides who plays:
+      # online mode checks every Java account, and only whitelisted players get in.
+      ONLINE_MODE: "TRUE"
+      ENABLE_WHITELIST: "TRUE"
+      PLUGINS: |
+        https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+        https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+    volumes:
+      - minecraft-data:/data
+
+volumes:
+  minecraft-data: {}

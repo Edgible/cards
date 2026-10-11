@@ -3,6 +3,7 @@ kind: Card
 metadata:
   name: ci
   description: Your own Git forge with CI, and the runner on a machine of its own
+  type: pattern
 
 applications:
   - name: gitea

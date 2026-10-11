@@ -1,0 +1,24 @@
+# Compose file for the jellyfin card, from the Compose example in Jellyfin's docs.
+# The host port and the media folder come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+
+name: jellyfin
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:12.2.20261005-225228
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${JELLYFIN_PORT:?set JELLYFIN_PORT in card.env}:8096"
+    volumes:
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+      # Your films, shows and music, read-only. Jellyfin never changes them.
+      - ${JELLYFIN_MEDIA_DIR:?set JELLYFIN_MEDIA_DIR in card.env}:/media:ro
+    # For hardware transcoding on Linux with an Intel or AMD GPU, uncomment:
+    # devices:
+    #   - /dev/dri:/dev/dri
+
+volumes:
+  jellyfin-config: {}
+  jellyfin-cache: {}

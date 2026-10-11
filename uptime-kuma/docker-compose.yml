@@ -1,0 +1,18 @@
+# Compose file for the uptime-kuma card.
+# The host port comes from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+# The image's own healthcheck applies.
+
+name: uptime-kuma
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.5-slim
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${UPTIME_KUMA_PORT:?set UPTIME_KUMA_PORT in card.env}:3001"
+    volumes:
+      - uptime-kuma-data:/app/data
+
+volumes:
+  uptime-kuma-data: {}

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: wordpress
+  description: WordPress with MariaDB, installed before it goes public
+  type: app
+
+applications:
+  - name: wordpress
+    what: WordPress, the site and its /wp-admin
+    from: wordpress:7.1.3-php8.3-apache
+    database: mariadb:11.8.9
+    port: 8085
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [none]
+    place: wordpress
+
+places:
+  wordpress:
+    memory: 384 MB
+    disk: 2 GB
+    arch: [amd64, arm64]
+    gpu: none

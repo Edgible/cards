@@ -1,0 +1,67 @@
+# Compose file for the wordpress card.
+# The host port, ORG_LABEL and the passwords come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+# wordpress-cli runs only on demand, for the Install step: --profile cli run --rm wordpress-cli wp ...
+
+name: wordpress
+
+x-wordpress-env: &wordpress-env
+  WORDPRESS_DB_HOST: wordpress-db
+  WORDPRESS_DB_USER: wordpress
+  WORDPRESS_DB_NAME: wordpress
+  WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:?set WORDPRESS_DB_PASSWORD in card.env}
+  # WordPress keeps its own address; it is the published hostname, or your own domain.
+  WORDPRESS_CONFIG_EXTRA: |
+    define('WP_HOME', '${WORDPRESS_URL:-https://wordpress.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}');
+    define('WP_SITEURL', '${WORDPRESS_URL:-https://wordpress.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}');
+
+services:
+  wordpress:
+    image: wordpress:7.1.3-php8.3-apache
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${WORDPRESS_PORT:?set WORDPRESS_PORT in card.env}:80"
+    environment: *wordpress-env
+    volumes:
+      - wordpress-files:/var/www/html
+    depends_on:
+      wordpress-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://localhost/wp-includes/images/blank.gif') === false ? 1 : 0);"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  wordpress-db:
+    image: mariadb:11.8.9
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: ${WORDPRESS_DB_PASSWORD:?set WORDPRESS_DB_PASSWORD in card.env}
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - wordpress-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  wordpress-cli:
+    image: wordpress:cli-2.12.0-php8.3
+    profiles: [cli]
+    # The apache image's www-data is 33:33; the cli image's differs, so match it.
+    user: "33:33"
+    environment: *wordpress-env
+    volumes:
+      - wordpress-files:/var/www/html
+    depends_on:
+      wordpress-db:
+        condition: service_healthy
+
+volumes:
+  wordpress-files: {}
+  wordpress-db-data: {}

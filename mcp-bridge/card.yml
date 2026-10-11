@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: mcp-bridge
+  description: Any stdio MCP server, published over Streamable HTTP for your AI assistants
+  type: app
+
+applications:
+  - name: mcp-bridge
+    what: an MCP server over Streamable HTTP, for AI assistants
+    from: supercorp/supergateway:4.1.0-uvx
+    port: 8000
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [api-key]
+    place: mcp-bridge
+
+places:
+  mcp-bridge:
+    memory: 384 MB
+    disk: 1.5 GB
+    arch: [amd64, arm64]
+    gpu: none

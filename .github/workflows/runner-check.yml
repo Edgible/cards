@@ -1,0 +1,20 @@
+name: runner-check
+
+# Proves the self-hosted test runner can reach Docker and Edgible.
+# By hand only: a self-hosted runner never runs a pull request.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runner:
+    runs-on: [self-hosted, edgible-test]
+    steps:
+      - name: docker
+        run: docker version --format 'docker {{.Server.Version}}'
+      - name: edgible
+        run: |
+          edgible --version
+          edgible device list --json | python3 -c "import json,sys; print(len(json.load(sys.stdin)), 'devices visible')"

@@ -1,0 +1,25 @@
+# Compose file for the linkding card.
+# The host port, ORG_LABEL and the admin password come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+# The image's own healthcheck applies.
+
+name: linkding
+
+services:
+  linkding:
+    image: ghcr.io/sissbruecker/linkding:1.47.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${LINKDING_PORT:?set LINKDING_PORT in card.env}:9090"
+    environment:
+      # Made on first start, and left alone after that. linkding has no sign-up page,
+      # so nobody else gets an account unless the admin adds one.
+      LD_SUPERUSER_NAME: ${LINKDING_ADMIN_USER:?set LINKDING_ADMIN_USER in card.env}
+      LD_SUPERUSER_PASSWORD: ${LINKDING_ADMIN_PASSWORD:?set LINKDING_ADMIN_PASSWORD in card.env}
+      # Logins and saves are POSTs from the public hostname.
+      LD_CSRF_TRUSTED_ORIGINS: ${LINKDING_URL:-https://linkding.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}
+    volumes:
+      - linkding-data:/etc/linkding/data
+
+volumes:
+  linkding-data: {}

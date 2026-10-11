@@ -1,4 +1,4 @@
-# Compose file for place forge of the ci card: Gitea and its database, from the gitea starter.
+# Compose file for place forge of the ci card: Gitea and its database, from the gitea card.
 # Ports, ORG_LABEL and the secrets come from card.env. Start with:
 #   docker compose --env-file card.env -f docker-compose.yml up -d --wait
 

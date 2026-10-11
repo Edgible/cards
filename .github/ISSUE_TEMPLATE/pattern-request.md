@@ -1,15 +1,15 @@
 ---
-name: Card request
-about: Ask for a pattern of several apps to become a card
-title: "Card request: "
-labels: card-request
+name: Pattern card request
+about: Ask for several apps wired together to become a pattern card
+title: "Pattern request: "
+labels: pattern-request
 ---
 
 ## What the pattern is for
 
 ## The apps
 
-<!-- Each app, with a link to its starter if it has one. Ask for a missing app in Edgible/starters. -->
+<!-- Each app, with a link to its app card if it has one. Ask for a missing app with an App card request. -->
 
 ## How they connect
 

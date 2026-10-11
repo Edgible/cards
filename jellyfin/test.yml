@@ -1,0 +1,24 @@
+tested: 2026-10-11
+result: pass
+card-kit: "5950737"
+edgible-cli: 1.4.6
+files: sha256:9668d4305692658c
+machine: darwin/arm64, docker 29.4.3
+images:
+  - jellyfin/jellyfin:12.2.20261005-225228@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    jellyfin: pass
+  checks:
+    wizard-locked: pass
+  teardown: pass
+measured:
+  jellyfin:
+    memory: 528 MB
+    images: 424 MB
+    data: 1 MB
+duration: 3m
+by: agent

@@ -1,0 +1,25 @@
+tested: 2026-10-11
+result: pass
+card-kit: "5950737"
+edgible-cli: 1.4.6
+files: sha256:098b9afbd66d64de
+machine: darwin/arm64, docker 29.4.3
+images:
+  - supercorp/supergateway:4.1.0-uvx@sha256:660c97d4ee58498f4654e1dc60682f4f4ccab363025c9b8b415d04b4e823025e
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    mcp-bridge: pass
+  checks:
+    mcp-tools: pass
+  teardown: pass
+measured:
+  mcp-bridge:
+    memory: 225 MB
+    images: 96 MB
+    data: 62 MB
+duration: 3m
+by: agent
+notes: mcp-bridge's port 8000 was taken on the test machine, so it was tested on 8001.

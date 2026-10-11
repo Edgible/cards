@@ -1,0 +1,22 @@
+tested: 2026-10-11
+result: pass
+card-kit: "e011965"
+edgible-cli: 1.4.6
+files: sha256:79acb7288e106e79
+machine: darwin/arm64, docker 29.4.3
+images:
+  - vaultwarden/server:1.37.4@sha256:efb3cde962015fcc036b2ea625242248611943b27212ebf4392841fb30fad055
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    vaultwarden: pass
+  teardown: pass
+measured:
+  vaultwarden:
+    memory: 9 MB
+    images: 91 MB
+    data: 324 KB
+duration: 3m
+by: agent

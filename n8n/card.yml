@@ -3,6 +3,7 @@ kind: Card
 metadata:
   name: n8n
   description: Locked editor and open webhook hostname, one n8n process
+  type: pattern
 
 applications:
   - name: n8n

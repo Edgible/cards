@@ -1,0 +1,26 @@
+tested: 2026-10-11
+result: pass
+card-kit: "5950737"
+edgible-cli: 1.4.6
+files: sha256:6046352d46e423c6
+machine: darwin/arm64, docker 29.4.3
+images:
+  - itzg/minecraft-server:2026.9.2@sha256:de5d1b1a83eba576f6c8a688fac2a3523ce457724cdebc8ea48d7818b74cdf6e
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    mc-java: pass
+    mc-bedrock: skip
+  checks:
+    bedrock-public: pass
+    java-public: pass
+  teardown: pass
+measured:
+  minecraft:
+    memory: 2.8 GB
+    images: 351 MB
+    data: 309 MB
+duration: 3m
+by: agent
