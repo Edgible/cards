@@ -14,8 +14,9 @@ name: grow
 
 on:
   schedule:
-    # Daily at 20:00 UTC, after the regression and the skill evals.
-    - cron: "0 20 * * *"
+    # Daily at 14:00 UTC (00:30 in Adelaide in summer), an hour after the skill evals, so
+    # the subscription's usage window it opens has closed before the working day.
+    - cron: "0 14 * * *"
   workflow_dispatch:
     inputs:
       app:
@@ -45,7 +46,58 @@ jobs:
     runs-on: [self-hosted, edgible-test]
     timeout-minutes: 240
     steps:
-      - name: Check the review queue
+      - name: Add merged agent cards to the needs map
+        # A merged agent-made card goes into its category's cards: in card-kit's needs map,
+        # through a card-kit pull request, so the category stops counting as a gap. This uses
+        # the runner's own GitHub sign-in (gh), because this workflow's token reaches only
+        # this repo. It runs code from main only, never from a pull request.
+        run: |
+          set -euo pipefail
+          merged=$(GH_TOKEN=${{ github.token }} gh pr list --repo "$GITHUB_REPOSITORY" --label agent-card --state merged --limit 200 \
+                   --json title,body --jq '.[] | [(.title | sub("^New app card: "; "")), ((.body | capture("Category: (?<c>[^\n]+)").c) // "")] | @tsv')
+          [ -n "$merged" ] || { echo "no merged agent-made cards"; exit 0; }
+          rm -rf kit-map && git clone -q --depth 1 https://github.com/Edgible/card-kit.git kit-map
+          if gh pr list --repo Edgible/card-kit --state open --search "head:needs-map/agent-cards" --json number --jq length | grep -qv '^0$'; then
+            echo "a needs-map pull request is already open"; exit 0
+          fi
+          printf '%s\n' "$merged" | python3 -c '
+          import re, sys
+          path = "kit-map/skills/edgible-cards/needs-map.yaml"
+          text = open(path).read()
+          added = []
+          for line in sys.stdin.read().splitlines():
+              card, _, category = line.partition("\t")
+              if not card or not category:
+                  continue
+              block = re.search(r"(?ms)^- category: " + re.escape(category) + r"\n.*?(?=^- category:|\Z)", text)
+              if not block:
+                  print(f"{card}: no category {category} in the needs map"); continue
+              m = re.search(r"(?m)^  cards: \[(.*)\]$", block.group(0))
+              cards = [c.strip() for c in m.group(1).split(",") if c.strip()]
+              if card in cards:
+                  continue
+              new = block.group(0)[:m.start()] + "  cards: [" + ", ".join(cards + [card]) + "]" + block.group(0)[m.end():]
+              text = text[:block.start()] + new + text[block.end():]
+              added.append(f"{card} ({category})")
+          open(path, "w").write(text)
+          open("kit-map/ADDED", "w").write("\n".join(added))
+          print("adding:", ", ".join(added) or "nothing")
+          '
+          [ -s kit-map/ADDED ] || exit 0
+          cd kit-map
+          branch="needs-map/agent-cards-$(date -u +%F)"
+          git checkout -q -b "$branch"
+          git add skills/edgible-cards/needs-map.yaml
+          git -c user.name="cards grow" -c user.email="actions@github.com" commit -q -m "Needs map: add merged agent-made cards" -m "$(cat ADDED)"
+          git push -q origin "$branch"
+          gh pr create --repo Edgible/card-kit --base main --head "$branch" --title "Needs map: add merged agent-made cards" \
+            --body "Adds app cards merged into Edgible/cards from the nightly grow job to their categories in the needs map, so those categories stop counting as gaps:
+
+          $(sed 's/^/- /' ADDED)
+
+          Made by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
+
+      - name: Check the review queue and tonight's evals
         id: queue
         env:
           GH_TOKEN: ${{ github.token }}
@@ -53,7 +105,16 @@ jobs:
           set -euo pipefail
           open=$(gh pr list --repo "$GITHUB_REPOSITORY" --label agent-card --state open --json number --jq length)
           echo "$open agent-made pull requests are waiting for review (at most $MAX_OPEN)"
-          if [ "$open" -ge "$MAX_OPEN" ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+          # If tonight's skill evals stopped early, such as at the subscription's usage limit,
+          # this long session would too: skip tonight.
+          evals=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow skill-evals.yml --limit 1 --json conclusion,createdAt \
+                  --jq '.[0] | select(.createdAt[0:10] == (now | strftime("%Y-%m-%d"))) | .conclusion')
+          echo "tonight's skill evals: ${evals:-not run}"
+          if [ "$open" -ge "$MAX_OPEN" ] || [ "$evals" = "failure" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"; echo "skipping tonight"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/checkout@v4
         if: steps.queue.outputs.skip == 'false'
@@ -102,7 +163,7 @@ jobs:
             ( cd work/cards && env -i PATH="$PATH" HOME="$PWD/../../agent-home" LANG=en_US.UTF-8 \
                 CLAUDE_CODE_OAUTH_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN" DOCKER_HOST="$docker_host" \
                 GH_TOKEN=disabled GITHUB_TOKEN=disabled GIT_CONFIG_NOSYSTEM=1 \
-                claude -p "$1" --max-turns 80 \
+                claude -p "$1" --model sonnet --max-turns 80 \
                   --allowedTools Read Write Edit Glob Grep WebFetch Skill \
                     "Bash(../card-kit/run:*)" "Bash(docker manifest inspect:*)" "Bash(docker buildx imagetools inspect:*)" \
                   --disallowedTools "Bash(gh:*)" "Bash(git:*)" "Bash(curl:*)" "Bash(docker run:*)" "Bash(docker compose:*)" ) \
@@ -164,6 +225,8 @@ jobs:
             echo
             echo "A new app card, \`$CARD\`, made by the nightly grow job for the first gap in the needs map. **An AI agent made this pull request.** Review it with the checklist below before merging."
             echo
+            echo "Category: $(jq -r '.category // "asked for by hand"' ../../pick.json)"
+            echo
             tail -n +2 NEW-CARD.md
             echo
             echo "## Test"
@@ -182,7 +245,7 @@ jobs:
             echo "- [ ] Nothing names a device, a hostname, or an organization."
             echo "- [x] \`test.yml\` passes and \`check-cards --fresh --untrusted\` passes (checked by the workflow)."
             echo
-            echo "Also add \`$CARD\` to its category's \`cards:\` in card-kit's needs map after merging. Made by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
+            echo "After this is merged, the grow job adds \`$CARD\` to its category in card-kit's needs map. Made by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
           } > ../../pr.md
           gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
             --title "New app card: $CARD" --label agent-card --body-file ../../pr.md
