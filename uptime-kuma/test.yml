@@ -1,0 +1,22 @@
+tested: 2026-10-11
+result: pass
+card-kit: "5950737"
+edgible-cli: 1.4.6
+files: sha256:a91b802be389bcbb
+machine: darwin/arm64, docker 29.4.3
+images:
+  - louislam/uptime-kuma:2.5.5-slim@sha256:9c56a772a7df53f444a404c579e87a27bd0c201375d00d6745a75bf8138f4342
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    uptime-kuma: pass
+  teardown: pass
+measured:
+  uptime-kuma:
+    memory: 152 MB
+    images: 180 MB
+    data: 16 KB
+duration: 2m
+by: agent

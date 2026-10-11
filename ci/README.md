@@ -10,9 +10,9 @@ Two places. `forge` runs Gitea and its Postgres, and publishes two hostnames: `g
 
 The runner has a machine of its own on purpose. A job runs whatever its workflow says, and the runner starts jobs through the Docker socket, which gives it full control of the machine it is on. Kept away from Gitea, a bad or compromised workflow can harm only the runner's machine, not your repositories, and a heavy build does not slow Gitea down. For a small, trusted setup, both places can be the same machine.
 
-Both hostnames are on `none`, as in the gitea starter: `git`, the runner, API tokens and webhooks cannot get past an Edgible sign-in. Registration is off, the web installer is never served, and the admin is made from the command line before anything is public. Gitea and the runner share `GITEA_RUNNER_TOKEN` from `card.env`, so the runner registers itself.
+Both hostnames are on `none`, as in the gitea card: `git`, the runner, API tokens and webhooks cannot get past an Edgible sign-in. Registration is off, the web installer is never served, and the admin is made from the command line before anything is public. Gitea and the runner share `GITEA_RUNNER_TOKEN` from `card.env`, so the runner registers itself.
 
-Built from the [gitea starter](https://github.com/Edgible/starters/tree/main/gitea), plus the runner.
+Built from the [gitea card](../gitea), plus the runner.
 
 Repositories and settings live in the volume `gitea-data`, users and issues in `gitea-db-data`, both on place `forge`; the runner keeps its registration in `gitea-runner-data`. The runner's numbers are for the jobs it runs, not the runner itself, which needs little: each job is a container with its own image and caches, so give that machine room for your builds. Minimum recommended for the place `forge`: 384 MB of memory and 1.5 GB of disk, on an arm64 or amd64 machine, with no GPU. Minimum recommended for the place `runner`: 2 GB of memory and 10 GB of disk, on an arm64 or amd64 machine, with no GPU.
 

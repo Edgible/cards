@@ -1,0 +1,44 @@
+# Compose file for the umami card.
+# The host port and the secrets come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+
+name: umami
+
+services:
+  umami:
+    image: ghcr.io/umami-software/umami:3.4.0
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:${UMAMI_PORT:?set UMAMI_PORT in card.env}:3000"
+    environment:
+      DATABASE_URL: postgresql://umami:${UMAMI_DB_PASSWORD:?set UMAMI_DB_PASSWORD in card.env}@umami-db:5432/umami
+      APP_SECRET: ${UMAMI_APP_SECRET:?set UMAMI_APP_SECRET in card.env}
+      TWO_FACTOR_ENCRYPTION_KEY: ${UMAMI_TWO_FACTOR_KEY:?set UMAMI_TWO_FACTOR_KEY in card.env}
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:3000/api/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  umami-db:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: ${UMAMI_DB_PASSWORD:?set UMAMI_DB_PASSWORD in card.env}
+    volumes:
+      - umami-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umami -d umami"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  umami-db-data: {}

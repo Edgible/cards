@@ -3,6 +3,7 @@ kind: Card
 metadata:
   name: website
   description: Public React site, its editor, open tracker, locked dashboard, locked monitor
+  type: pattern
 
 applications:
   - name: site

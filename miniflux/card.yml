@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: miniflux
+  description: Miniflux, the minimalist feed reader, behind your org login
+  type: app
+
+applications:
+  - name: miniflux
+    what: Miniflux feed reader
+    from: miniflux/miniflux:2.3.3
+    database: postgres:17.11-alpine
+    port: 8080
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [org]
+    place: miniflux
+
+places:
+  miniflux:
+    memory: 384 MB
+    disk: 1.5 GB
+    arch: [amd64, arm64]
+    gpu: none

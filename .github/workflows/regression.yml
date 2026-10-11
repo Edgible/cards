@@ -1,0 +1,133 @@
+# The regression: retest the cards on a real Edgible serving device. See HOW-IT-WORKS.md.
+#
+# card-kit's test-cards.py tests every card that carries test.yml (every app card, and each
+# pattern with a test) when it has no status yet, when its files changed since its last status,
+# or when `edgible --version` changed. Anything else is skipped. The status lives on the
+# test-status branch, which the README's badges read, so each run starts from what the last
+# one learned.
+#
+# It runs on a self-hosted runner that can publish apps, so it never runs on a pull request:
+# only on the schedule, or by hand from the Actions tab ("force" retests every card, "only"
+# names some).
+
+name: regression
+
+on:
+  schedule:
+    # Daily at 16:00 UTC.
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Retest every card, changed or not
+        type: boolean
+        default: false
+      only:
+        description: Test only these cards, separated by spaces, such as "umami wordpress"
+        type: string
+        default: ""
+
+permissions:
+  contents: write   # push the status to the test-status branch
+  issues: write     # open an issue for a card that fails
+
+concurrency:
+  group: regression
+  cancel-in-progress: false
+
+env:
+  CARD_KIT_REF: main
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  regression:
+    # The runner's machine has Docker, the edgible CLI signed in, and is a serving device.
+    # test-card checks that machine's own ports and Docker, so it cannot run in a container.
+    runs-on: [self-hosted, edgible-test]
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cards
+
+      - name: Fetch card-kit and the last status
+        run: |
+          set -euo pipefail
+          rm -rf card-kit status
+          git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/Edgible/card-kit.git card-kit
+          if git -C cards ls-remote --exit-code --heads origin test-status >/dev/null; then
+            git -C cards fetch -q --depth 1 origin test-status
+            git -C cards worktree add -q ../status FETCH_HEAD
+          else
+            mkdir status
+          fi
+          echo "cards $(git -C cards rev-parse --short HEAD)," \
+               "card-kit $(git -C card-kit rev-parse --short HEAD)," \
+               "edgible $(edgible --version)"
+
+      - name: Test the cards that need it
+        env:
+          FORCE: ${{ inputs.force }}
+          ONLY: ${{ inputs.only }}
+          # The serving device the tests publish on, as `edgible device list` names it.
+          # A repository variable, so no device name is in this file.
+          DEVICE: ${{ vars.TEST_DEVICE }}
+        run: |
+          set -euo pipefail
+          [ -n "$DEVICE" ] || { echo "set the repository variable TEST_DEVICE" >&2; exit 2; }
+          args=(--device "$DEVICE" --status ../status --by ci)
+          if [ "$FORCE" = "true" ]; then args+=(--all); fi
+          if [ -n "$ONLY" ]; then
+            if ! [[ "$ONLY" =~ ^[a-z0-9\ -]+$ ]]; then echo "only: card names, separated by spaces" >&2; exit 2; fi
+            read -ra names <<< "$ONLY"
+            args+=(--only "${names[@]}")
+          fi
+          cd cards
+          # Keep going on a failure, so the next steps still save what this run learned.
+          python3 ../card-kit/test-cards.py "${args[@]}" && rc=0 || rc=$?
+          echo "$rc" > ../result
+
+      - name: Save the status
+        run: |
+          set -euo pipefail
+          cd status
+          [ -f status.json ] || { echo "no status written"; exit 0; }
+          echo "card | result | Edgible | tested"
+          jq -r 'to_entries[] | "\(.key) | \(.value.result) | \(.value["edgible-cli"]) | \(.value.tested)"' status.json
+          # A first run starts the branch; later runs add to the one fetched above.
+          [ -e .git ] || git init -q -b test-status
+          git add -A
+          if git diff --cached --quiet; then echo "status unchanged"; exit 0; fi
+          git -c user.name="cards regression" -c user.email="actions@github.com" \
+            commit -q -m "Status from $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          git push -q "https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY.git" HEAD:test-status
+          echo "status saved to the test-status branch"
+
+      - name: Open an issue for each failing card
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [ -f status/status.json ] || exit 0
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          for card in $(jq -r 'to_entries[] | select(.value.result == "fail") | .key' status/status.json); do
+            title="Regression: $card fails"
+            if gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[0].number' | grep -q .; then
+              echo "$card: an issue is already open"
+              continue
+            fi
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" \
+              --body "The regression found \`$card\` failing on Edgible $(jq -r --arg c "$card" '.[$c]["edgible-cli"]' status/status.json). The run, with the failing step: $run"
+          done
+
+      - name: Fail when a card failed
+        run: |
+          rc=$(cat result 2>/dev/null || echo 2)
+          [ "$rc" = 0 ] || { echo "test-cards exited $rc; see the test step for which card failed"; exit 1; }
+
+      - name: Clean up
+        if: always()
+        run: git -C cards worktree remove --force ../status 2>/dev/null || rm -rf status

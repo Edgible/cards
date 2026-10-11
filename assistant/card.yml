@@ -3,6 +3,7 @@ kind: Card
 metadata:
   name: assistant
   description: Chat that answers from your own documents, and the model that runs it
+  type: pattern
 
 applications:
   - name: assistant

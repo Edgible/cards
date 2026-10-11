@@ -1,0 +1,59 @@
+# Compose file for the immich card, from the Compose file Immich publishes for v3.3.1.
+# The host port and the secrets come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+
+name: immich
+
+x-immich-env: &immich-env
+  DB_HOSTNAME: immich-db
+  DB_USERNAME: immich
+  DB_DATABASE_NAME: immich
+  DB_PASSWORD: ${IMMICH_DB_PASSWORD:?set IMMICH_DB_PASSWORD in card.env}
+  REDIS_HOSTNAME: immich-redis
+  IMMICH_MACHINE_LEARNING_URL: http://immich-machine-learning:3003
+
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:v3.3.1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${IMMICH_PORT:?set IMMICH_PORT in card.env}:2283"
+    environment: *immich-env
+    volumes:
+      - immich-library:/data
+    depends_on:
+      immich-redis:
+        condition: service_healthy
+      immich-db:
+        condition: service_healthy
+
+  # Face recognition and smart search. Remove this service to run without them.
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.1
+    restart: unless-stopped
+    environment: *immich-env
+    volumes:
+      - immich-model-cache:/cache
+
+  immich-redis:
+    image: docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
+    restart: unless-stopped
+    healthcheck:
+      test: redis-cli ping | grep -q PONG || exit 1
+
+  immich-db:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD:?set IMMICH_DB_PASSWORD in card.env}
+      POSTGRES_USER: immich
+      POSTGRES_DB: immich
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - immich-db-data:/var/lib/postgresql/data
+    shm_size: 128mb
+
+volumes:
+  immich-library: {}
+  immich-db-data: {}
+  immich-model-cache: {}

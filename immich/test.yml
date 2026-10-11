@@ -1,0 +1,28 @@
+tested: 2026-10-11
+result: pass
+card-kit: "5950737"
+edgible-cli: 1.4.6
+files: sha256:5de8bf509be98c38
+machine: darwin/arm64, docker 29.4.3
+images:
+  - docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
+  - ghcr.io/immich-app/immich-machine-learning:v3.3.1@sha256:513c831cfb010ad319341a0c86b42c575a0d5b688d3e8cae346ee624074a58ed
+  - ghcr.io/immich-app/immich-server:v3.3.1@sha256:db996e352359771c6a3db121a0ed8761516b22f727fc092a0f46dcfef82c1bc1
+  - ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    immich: pass
+  checks:
+    admin-signs-in: pass
+  teardown: pass
+measured:
+  immich:
+    memory: 2.2 GB
+    images: 854 MB
+    data: 346 MB
+duration: 5m
+by: agent
+notes: immich is taken in the test org, so it was published as test-immich.

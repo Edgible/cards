@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  schema:
+  check-cards:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,4 +17,6 @@ jobs:
         with:
           repository: Edgible/card-kit
           path: .card-kit
-      - run: .card-kit/run check-cards
+      # --fresh: a card whose files changed since its test.yml fails, so a test always
+      # describes the files it sits beside.
+      - run: .card-kit/run check-cards --fresh

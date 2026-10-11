@@ -1,30 +1,64 @@
 # Contributing a card
 
-There are three ways to help: add a card, fix one, or ask for one. The card format and its tools are in [Edgible/card-kit](https://github.com/Edgible/card-kit). What is written there wins over anything here.
+There are three ways to help: add a card, fix one, or ask for one. Each follows the format in [README.md](README.md#what-a-card-is) and in [Edgible/card-kit](https://github.com/Edgible/card-kit). What is written there wins over anything here.
 
 ## Ask for a card
 
-Open an issue from the **Card request** template. Say what the pattern is for, which apps it joins, and how they reach each other. If each app has a [starter](https://github.com/Edgible/starters), link it. An app with no starter yet is better asked for there.
+Open an issue from one of the two templates:
 
-## Add or fix a card
+- **App card request,** for one self-hosted app. Name the app and link it, ideally on [awesome-selfhosted](https://awesome-selfhosted.net). Say what you would use it for and who calls it: a browser, the app's own phone or desktop apps, or another machine. That decides the auth mode.
+- **Pattern card request,** for several apps wired together. Say what the pattern is for, which apps it joins, and how they reach each other. Link each app's card if it has one.
 
-The steps are in the README's [Publish a card](README.md#publish-a-card): check the name, fork, write the card from its starters, run `check-cards`, and open a pull request from your fork. Never push to `main`.
+If you tried to build it, say where you got stuck.
 
-Before the pull request:
+## Add a card
 
-- **Test it** with `test-card` on your own serving device when you can, and commit the `test.yml` it writes. A card does not have to carry one, but a reviewer trusts a card that does. That needs Docker, an Edgible account with a serving device, and the `edgible` CLI logged in:
+You need Docker. To test a card, which every app card must be, you also need an Edgible account with a serving device and the `edgible` CLI logged in. `test-card` runs the whole lifecycle on that device.
 
-  ```bash
-  python3 ../card-kit/test-card.py <name> --device <your-device>
-  ```
+1. **Check the app and the name.** An app card's app must not be on the README's [What is not an app card](README.md#what-is-not-an-app-card) list. A 404 from this command means the name is free:
 
-- **Check nothing private is left:** no device name, hostname, organization id, password, or your own domain, in any file.
+   ```bash
+   gh api repos/Edgible/cards/contents/<name> --jq .name
+   ```
 
-For a fix, say what was wrong and how you know it is fixed.
+   If the name is taken, edit the card that is already there, or pick a name that says how yours differs, such as `n8n-sqlite`.
+
+2. **Fork and clone,** with card-kit beside it. Work on a branch, never on `main`:
+
+   ```bash
+   gh repo fork Edgible/cards --clone
+   git clone https://github.com/Edgible/card-kit
+   cd cards && git checkout -b <name>
+   ```
+
+3. **Write the card.** Copy the card closest to yours and change the names, so every card reads the same way. Set `metadata.type` to `app` or `pattern`. The rules are in the README's [What a card is](README.md#what-a-card-is) and card-kit's [Conventions](https://github.com/Edgible/card-kit#conventions). A pattern starts from the app cards of its apps. Write the README with `card-readme`:
+
+   ```bash
+   ../card-kit/run card-readme <name> <name>-readme.yml
+   ```
+
+   The `<name>-readme.yml` it reads holds the parts only you know. Keep it out of the commit.
+
+4. **Test it** on your serving device until it passes, and commit the `test.yml` it writes. An app card must have one. A pattern does not have to, but a reviewer trusts one that does, and the nightly regression only tests cards that carry it. Put the values only a person may fill in `test/inputs.env`, and the card's own end-to-end checks in `test/<check>.sh`:
+
+   ```bash
+   python3 ../card-kit/test-card.py <name> --device <your-device>
+   ../card-kit/run check-cards --fresh
+   ```
+
+   `check-cards --fresh` fails a card whose files changed after its `test.yml`, so test again after any change. A picture is optional: `../card-kit/run card-image <name>`.
+
+5. **Check nothing private is left:** no device name, hostname, organization id, password, or your own domain, in any file.
+
+6. **Open the pull request** from your fork. The template lists the review checklist: tick each item you checked.
+
+## Fix a card
+
+Use the same steps from 2: fork, branch, change, `test-card`, `check-cards --fresh`, pull request. Say what was wrong and how the test shows the fix. When the nightly test found the failure, the card has an issue already. Link to it.
 
 ## What happens next
 
-A maintainer reviews the checklist in the pull request template, and decides whether a change to an existing card belongs there. The merge is the publish.
+A maintainer reviews the checklist, the parts a test cannot judge, and runs `test-card` on an Edgible device before merging a new or changed card that carries `test.yml`. Lifecycle tests never run on a pull request. The merge is the publish. After it, the nightly `test-cards` run tests the card whenever it or Edgible changes. When it fails, it gets an issue.
 
 ## Made with an AI agent
 

@@ -3,6 +3,7 @@ kind: Card
 metadata:
   name: accounts
   description: Sign-up and sign-in for your visitors, and the console that manages them
+  type: pattern
 
 applications:
   - name: accounts

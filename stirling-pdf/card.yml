@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: stirling-pdf
+  description: Stirling-PDF, the PDF toolbox, behind your org login
+  type: app
+
+applications:
+  - name: stirling-pdf
+    what: Stirling-PDF, merge, split, convert, OCR
+    from: stirlingtools/stirling-pdf:3.1.0
+    port: 8090
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [org]
+    place: stirling-pdf
+
+places:
+  stirling-pdf:
+    memory: 2 GB
+    disk: 2.5 GB
+    arch: [amd64, arm64]
+    gpu: none

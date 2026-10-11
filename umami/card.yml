@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: umami
+  description: Umami analytics, the dashboard behind org and the tracking script open
+  type: app
+
+applications:
+  - name: umami
+    what: Umami dashboard
+    from: ghcr.io/umami-software/umami:3.4.0
+    database: postgres:17.11-alpine
+    port: 3000
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [org]
+    place: umami
+
+  - name: analytics
+    what: Umami tracking script, same process as umami
+    from: ghcr.io/umami-software/umami:3.4.0
+    port: 3000
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [none]
+    place: umami
+
+places:
+  umami:
+    memory: 384 MB
+    disk: 1.5 GB
+    arch: [amd64, arm64]
+    gpu: none

@@ -36,4 +36,4 @@ Because the steps are the same every time, they're easy to follow. That goes for
 
 ## Get involved
 
-Have a look at the [cards](README.md) and try one. If you change one to suit yourself, share it back as a variant with a name that says what's different, like `n8n-sqlite`. And if you've built something in your own garage that you're proud of, we'd love to see it as a card. [Publish a card](README.md#publish-a-card) explains how.
+Have a look at the [cards](README.md) and try one. If you change one to suit yourself, share it back as a variant with a name that says what's different, like `n8n-sqlite`. And if you've built something in your own garage that you're proud of, we'd love to see it as a card. [CONTRIBUTING.md](CONTRIBUTING.md) explains how.

@@ -1,0 +1,25 @@
+# Compose file for the vaultwarden card.
+# The host port, ORG_LABEL and the admin token come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+# The image's own healthcheck applies.
+
+name: vaultwarden
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:1.37.4
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${VAULTWARDEN_PORT:?set VAULTWARDEN_PORT in card.env}:80"
+    environment:
+      DOMAIN: ${VAULTWARDEN_URL:-https://vaultwarden.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}
+      # The hostname is open to anyone, so nobody may sign up unless invited from /admin.
+      SIGNUPS_ALLOWED: "false"
+      INVITATIONS_ALLOWED: "true"
+      SHOW_PASSWORD_HINT: "false"
+      ADMIN_TOKEN: ${VAULTWARDEN_ADMIN_TOKEN:?set VAULTWARDEN_ADMIN_TOKEN in card.env}
+    volumes:
+      - vaultwarden-data:/data
+
+volumes:
+  vaultwarden-data: {}
