@@ -32,7 +32,7 @@ Edgible itself is not here. Cards are free and portable; Edgible is the platform
 | **kit** ([card-kit's kit.yml](https://github.com/Edgible/card-kit/blob/main/.github/workflows/kit.yml)) | Every pull request and push to card-kit | GitHub's own runners | `check-cards` on every card here, so a change to the tools cannot break a card; `check-map` on the needs map | The pull request's check |
 | **regression** ([regression.yml](.github/workflows/regression.yml)) | Nightly, and by hand with `force` or `only` | A self-hosted runner: a machine with Docker, the `edgible` CLI signed in, and a serving device | `test-cards`: retests each card that carries `test.yml` when its files or the Edgible version changed, through the full lifecycle on a real device | The [`test-status` branch](https://github.com/Edgible/cards/tree/test-status) (`status.json` and one badge file per card), and an issue for each failure |
 | **runner-check** ([runner-check.yml](.github/workflows/runner-check.yml)) | By hand | The self-hosted runner | Proves the runner can reach Docker and Edgible | The run's log |
-| **skill evals** (planned) | Weekly | The self-hosted runner | Realistic needs, generated from the needs map, answered by the skill in fresh read-only sessions and scored; plus a scan for emerging needs in the MCP Registry, GitHub, and self-hosting forums | A public report, and one proposed fix per finding as a pull request |
+| **skill-evals** ([skill-evals.yml](.github/workflows/skill-evals.yml)) | Nightly, and by hand | The self-hosted runner, with the `claude` CLI signed in | Tonight's share of the skill's held-out prompts (each runs once a week, about N/7 a night), answered in read-only sessions with the skill and judged by a second session | The [`eval-results` branch](https://github.com/Edgible/cards/tree/eval-results), and the **Skill eval report** issue, combining the last seven nights |
 
 Lifecycle tests and evals never run from a pull request. A pull request only gets the checks that need no Edgible account, on GitHub's runners. Everything that publishes apps runs from `main`, by schedule or by a maintainer's hand.
 
@@ -59,5 +59,5 @@ A runner that can publish apps must never run code from a pull request, because 
 
 - **The regression moved here.** Until 2026-10-11 it ran from a private workflow, with its status kept privately. It now runs from [regression.yml](.github/workflows/regression.yml) in this repo and publishes to `test-status` directly. The serving device it publishes on is the repository variable `TEST_DEVICE`, so no device name is in the file.
 - **Pattern cards include app cards** with Compose `include:` rather than copying their services, so a fix to an app card reaches every pattern built on it.
-- **The skill eval loop** starts, with its reports public.
+- **The skill eval loop grows:** generated scenarios each week, and a scan for emerging needs (the MCP Registry, GitHub, self-hosting forums) that proposes needs-map entries as pull requests.
 - **Platform primitives** the cards keep needing, such as tags for counting deployments, sign-in for MCP clients, and backup and restore, are tracked by Edgible.
