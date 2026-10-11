@@ -1,8 +1,8 @@
 # The regression: retest the cards on a real Edgible serving device. See HOW-IT-WORKS.md.
 #
 # card-kit's test-cards.py tests every card that carries test.yml (every app card, and each
-# pattern with a test) when it has no status yet, when its files changed since its last status,
-# or when `edgible --version` changed. Anything else is skipped. The status lives on the
+# pattern with a test). With --spread 7, a new or changed card is tested at once; a new
+# `edgible --version`, or a week without a test, waits for the card's turn in the week. The status lives on the
 # test-status branch, which the README's badges read, so each run starts from what the last
 # one learned.
 #
@@ -78,7 +78,9 @@ jobs:
         run: |
           set -euo pipefail
           [ -n "$DEVICE" ] || { echo "set the repository variable TEST_DEVICE" >&2; exit 2; }
-          args=(--device "$DEVICE" --status ../status --by ci)
+          # --spread 7: a new or changed card is tested tonight; every other test waits for the
+          # card's turn in the week, so a night tests about a seventh of the cards.
+          args=(--device "$DEVICE" --status ../status --by ci --spread 7)
           if [ "$FORCE" = "true" ]; then args+=(--all); fi
           if [ -n "$ONLY" ]; then
             if ! [[ "$ONLY" =~ ^[a-z0-9\ -]+$ ]]; then echo "only: card names, separated by spaces" >&2; exit 2; fi
