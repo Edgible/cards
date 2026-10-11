@@ -73,6 +73,7 @@ jobs:
           # 2: stopped early, such as at the subscription's usage limit.
           python3 card-kit/skills/edgible-cards/evals/run-evals.py "${args[@]}" --out "night/$day" && rc=0 || rc=$?
           echo "run-evals exited $rc"
+          echo "$rc" > rc
           if [ "$rc" = 2 ]; then echo "::warning::stopped early; see report.md for the prompts not run"; fi
           [ -f "night/$day/results.json" ] || { echo "no results written" >&2; exit 1; }
 
@@ -119,6 +120,13 @@ jobs:
           else
             gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file issue.md
           fi
+
+      - name: Fail when the run stopped early
+        # Results so far are saved and reported above; a run that could not score every
+        # prompt, such as one that was not signed in or hit the usage limit, still fails.
+        run: |
+          rc=$(cat rc 2>/dev/null || echo 2)
+          [ "$rc" != 2 ] || { echo "run-evals stopped early; see the run step for why"; exit 1; }
 
       - name: Clean up
         if: always()
