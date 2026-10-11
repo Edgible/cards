@@ -1,0 +1,215 @@
+# Grow the cards: each night, an agent makes one new app card for the first gap in the
+# skill's needs map, and it is tested on a real serving device. A card that passes becomes
+# a pull request for a person to review; one that does not becomes an issue saying how far
+# it got. Nothing is ever merged here. See HOW-IT-WORKS.md.
+#
+# The agent is a Claude Code session with the edgible-cards skill, on the runner's Claude
+# subscription. It works in its own home folder with a short list of commands (card-kit's
+# tools and Docker image lookups): no shell beyond that, no GitHub or Edgible login. This
+# workflow, not the agent, checks the card, tests it, and opens the pull request.
+#
+# It skips the night when 3 agent-made pull requests are already waiting for review.
+
+name: grow
+
+on:
+  schedule:
+    # Daily at 20:00 UTC, after the regression and the skill evals.
+    - cron: "0 20 * * *"
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Make a card for this app instead of the next gap (its name on awesome-selfhosted)
+        type: string
+        default: ""
+
+permissions:
+  contents: write        # push the card's branch
+  pull-requests: write   # open the pull request
+  issues: write          # or the issue
+
+concurrency:
+  group: grow
+  cancel-in-progress: false
+
+env:
+  MAX_OPEN: 3
+  ATTEMPTS: 3
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  grow:
+    runs-on: [self-hosted, edgible-test]
+    timeout-minutes: 240
+    steps:
+      - name: Check the review queue
+        id: queue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          open=$(gh pr list --repo "$GITHUB_REPOSITORY" --label agent-card --state open --json number --jq length)
+          echo "$open agent-made pull requests are waiting for review (at most $MAX_OPEN)"
+          if [ "$open" -ge "$MAX_OPEN" ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v4
+        if: steps.queue.outputs.skip == 'false'
+        with:
+          path: cards
+
+      - name: Pick an app
+        if: steps.queue.outputs.skip == 'false'
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP: ${{ inputs.app }}
+        run: |
+          set -euo pipefail
+          rm -rf card-kit work agent-home
+          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          # Apps proposed before, as a pull request or an issue, open or closed, are not picked again.
+          proposed=$( { gh pr list --repo "$GITHUB_REPOSITORY" --label agent-card --state all --limit 500 --json title --jq '.[].title'
+                        gh issue list --repo "$GITHUB_REPOSITORY" --label agent-card --state all --limit 500 --json title --jq '.[].title'; } \
+                      | sed -nE 's/^(New app card|App request): //p' | tr '\n' ' ')
+          echo "proposed before: ${proposed:-none}"
+          if [ -n "$APP" ]; then
+            if ! [[ "$APP" =~ ^[A-Za-z0-9\ ._-]+$ ]]; then echo "app: a name, letters, digits, spaces, . _ -" >&2; exit 2; fi
+            jq -n --arg app "$APP" '{category: null, candidates: [{name: $app}]}' > pick.json
+          else
+            (cd cards && ../card-kit/run pick-app --exclude $proposed) > pick.json || { echo "no gap left to fill"; echo "none=true" >> "$GITHUB_OUTPUT"; exit 0; }
+          fi
+          jq -r '"category: \(.category)\ncandidates: \([.candidates[].name] | join(", "))"' pick.json
+          echo "none=false" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test the card
+        if: steps.queue.outputs.skip == 'false' && steps.pick.outputs.none == 'false'
+        id: build
+        env:
+          DEVICE: ${{ vars.TEST_DEVICE }}
+        run: |
+          set -euo pipefail
+          [ -n "$DEVICE" ] || { echo "set the repository variable TEST_DEVICE" >&2; exit 2; }
+          # The agent's own home: the skill, and nothing else of this machine's.
+          mkdir -p agent-home/.claude/skills work
+          cp -R card-kit/skills/edgible-cards agent-home/.claude/skills/
+          cp -R cards work/cards
+          ln -s "$PWD/card-kit" work/card-kit
+          docker_host=$(docker context inspect --format '{{.Endpoints.docker.Host}}')
+          agent() {
+            ( cd work/cards && env -i PATH="$PATH" HOME="$PWD/../../agent-home" LANG=en_US.UTF-8 \
+                CLAUDE_CODE_OAUTH_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN" DOCKER_HOST="$docker_host" \
+                GH_TOKEN=disabled GITHUB_TOKEN=disabled GIT_CONFIG_NOSYSTEM=1 \
+                claude -p "$1" --max-turns 80 \
+                  --allowedTools Read Write Edit Glob Grep WebFetch Skill \
+                    "Bash(../card-kit/run:*)" "Bash(docker manifest inspect:*)" "Bash(docker buildx imagetools inspect:*)" \
+                  --disallowedTools "Bash(gh:*)" "Bash(git:*)" "Bash(curl:*)" "Bash(docker run:*)" "Bash(docker compose:*)" ) \
+              > agent.log 2>&1 || true
+            tail -c 3000 agent.log
+          }
+          picked=$(jq -c '{category, entry: (.entry // {} | {jobs, exposure, ask}), candidates}' pick.json)
+          agent "Make one new Edgible app card, following the edgible-cards skill's \"Build an app card\" section and the card-kit README. You are in a checkout of Edgible/cards; card-kit is at ../card-kit.
+
+          Choose ONE app from these candidates: the one that does the category's jobs best, not the most starred. Check that it has a maintained, multi-architecture (amd64 and arm64) container image with a version tag, using docker manifest inspect; skip any that does not. Candidates and the need they meet: $picked
+
+          Write the card in a new top-level directory named for the app (lowercase, hyphens), with metadata.type: app, copying the shape of the closest existing app card. Mount only named volumes or paths under ./ : nothing on the host, no Docker socket, no privileged mode or host network. Choose each hostname's auth mode by who calls it, from the cards README's table. Write README.md with ../card-kit/run card-readme (write its notes as <name>-readme.yml at the repo root, not in the card directory), and check with ../card-kit/run check-cards --untrusted <name>/card.yml until it says ok. You cannot run the card or test-card here; the next step does.
+
+          Write NEW-CARD.md at the repo root: the app's name and directory on the first line as 'card: <name>', then why you chose it over the other candidates, and each hostname's auth mode and why. Change nothing outside the new directory and NEW-CARD.md."
+          card=$(sed -nE '1s/^card: *([a-z0-9-]+).*/\1/p' work/cards/NEW-CARD.md 2>/dev/null || true)
+          [ -n "$card" ] && [ -f "work/cards/$card/card.yml" ] || { echo "the agent made no card"; echo "card=" >> "$GITHUB_OUTPUT"; echo "result=fail" >> "$GITHUB_OUTPUT"; exit 0; }
+          echo "card=$card" >> "$GITHUB_OUTPUT"
+          # The agent may change only its own card and NEW-CARD.md.
+          extra=$(cd work/cards && git status --porcelain | grep -vE "^\?\? ($card/|NEW-CARD\.md|[a-z0-9-]+-readme\.yml)$" || true)
+          [ -z "$extra" ] || { echo "the agent changed files outside its card:"; echo "$extra"; echo "result=fail" >> "$GITHUB_OUTPUT"; exit 0; }
+          result=fail
+          for attempt in $(seq 1 "$ATTEMPTS"); do
+            echo "== attempt $attempt: check and test $card"
+            if ! (cd work/cards && ../card-kit/run check-cards --untrusted "$card/card.yml") > check.log 2>&1; then
+              cat check.log
+              log=$(cat check.log)
+            elif (cd work/cards && python3 ../card-kit/test-card.py "$card" --device "$DEVICE" --by agent) > test.log 2>&1; then
+              tail -20 test.log; result=pass; break
+            else
+              tail -40 test.log
+              log=$(tail -60 test.log)
+            fi
+            [ "$attempt" -lt "$ATTEMPTS" ] || break
+            agent "The $card card you made did not pass. Fix the card, change nothing outside $card/, check it again with ../card-kit/run check-cards --untrusted $card/card.yml, and update NEW-CARD.md if the auth modes or app changed. What failed: $log"
+          done
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+
+      - name: Open the pull request
+        if: steps.build.outputs.result == 'pass'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CARD: ${{ steps.build.outputs.card }}
+        run: |
+          set -euo pipefail
+          cd work/cards
+          (../card-kit/run card-image "$CARD" || true) >/dev/null 2>&1
+          ../card-kit/run check-cards --fresh "$CARD/card.yml"
+          branch="agent/$CARD"
+          git checkout -q -b "$branch"
+          git add "$CARD"
+          git -c user.name="cards grow" -c user.email="actions@github.com" commit -q -m "New app card: $CARD
+
+          Made by an agent with the edgible-cards skill and tested with test-card on a serving
+          device, by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
+          git push -q "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY.git" "HEAD:$branch"
+          gh label create agent-card --repo "$GITHUB_REPOSITORY" --color 5319E7 --description "Made by the nightly grow job" 2>/dev/null || true
+          {
+            echo "## What"
+            echo
+            echo "A new app card, \`$CARD\`, made by the nightly grow job for the first gap in the needs map. **An AI agent made this pull request.** Review it with the checklist below before merging."
+            echo
+            tail -n +2 NEW-CARD.md
+            echo
+            echo "## Test"
+            echo
+            echo '```'
+            sed -n '/^result:/,$p' ../../test.log | head -20 | sed -e "s#$HOME#~#g"
+            echo '```'
+            echo
+            echo "## Review"
+            echo
+            echo "- [ ] Default passwords are changed or generated, and the README says how to sign in the first time."
+            echo "- [ ] Every secret is empty in git, with a \`# Generate with:\` comment."
+            echo "- [ ] The auth mode of each hostname suits its callers, by the README's table."
+            echo "- [ ] The README says where the data lives, and Tear down backs it up before deleting it."
+            echo "- [ ] The app is a sensible choice for its category, and its image is from its own project."
+            echo "- [ ] Nothing names a device, a hostname, or an organization."
+            echo "- [x] \`test.yml\` passes and \`check-cards --fresh --untrusted\` passes (checked by the workflow)."
+            echo
+            echo "Also add \`$CARD\` to its category's \`cards:\` in card-kit's needs map after merging. Made by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
+          } > ../../pr.md
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+            --title "New app card: $CARD" --label agent-card --body-file ../../pr.md
+
+      - name: Open an issue instead
+        if: steps.build.outputs.result == 'fail'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CARD: ${{ steps.build.outputs.card }}
+        run: |
+          set -euo pipefail
+          gh label create agent-card --repo "$GITHUB_REPOSITORY" --color 5319E7 --description "Made by the nightly grow job" 2>/dev/null || true
+          name=${CARD:-$(jq -r '.candidates[0].name' pick.json)}
+          {
+            echo "The nightly grow job tried to make an app card for **$name** (category: $(jq -r '.category // "asked for by hand"' pick.json)) and could not make one that passes."
+            echo
+            [ -f work/cards/NEW-CARD.md ] && { echo "## The agent's notes"; echo; tail -n +2 work/cards/NEW-CARD.md; echo; }
+            echo "## Where it stopped"
+            echo
+            echo '```'
+            { [ -f test.log ] && tail -40 test.log; [ -f check.log ] && cat check.log; [ -f test.log ] || [ -f check.log ] || tail -c 2000 agent.log; } | sed -e "s#$HOME#~#g"
+            echo '```'
+            echo
+            echo "A person can pick this up, or close it. It will not be picked again. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > issue.md
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "App request: $name" --label app-request --label agent-card --body-file issue.md
+
+      - name: Clean up
+        if: always()
+        run: rm -rf work agent-home card-kit
