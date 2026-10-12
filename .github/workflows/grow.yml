@@ -186,7 +186,7 @@ jobs:
 
           Choose ONE app from these candidates: the one that does the category's jobs best, not the most starred. Check that it has a maintained, multi-architecture (amd64 and arm64) container image with a version tag, using docker manifest inspect; skip any that does not. Candidates and the need they meet: $picked
 
-          Write the card in a new top-level directory named for the app (lowercase, hyphens), with metadata.type: app, copying the shape of the closest existing app card. Mount only named volumes or paths under ./ : nothing on the host, no Docker socket, no privileged mode or host network. Choose each hostname's auth mode by who calls it, from the cards README's table. Write README.md with ../card-kit/run card-readme (write its notes as <name>-readme.yml at the repo root, not in the card directory), and check with ../card-kit/run check-cards --untrusted <name>/card.yml until it says ok. You cannot run the card or test-card here; the next step does.
+          Write the card in a new top-level directory named for the app (lowercase, hyphens), with metadata.type: app, copying the shape of the closest existing app card. Mount only named volumes or paths under ./ : nothing on the host, no Docker socket, no privileged mode or host network. Choose each hostname's auth mode by who calls it, from the cards README's table. Write README.md with ../card-kit/run card-readme (write its notes as <name>-readme.yml at the repo root, not in the card directory), and check with ../card-kit/run check-cards --untrusted --before-test <name>/card.yml until it says ok. You cannot run the card or test-card here; the next step does.
 
           Write NEW-CARD.md at the repo root: the app's name and directory on the first line as 'card: <name>', then why you chose it over the other candidates, and each hostname's auth mode and why. Change nothing outside the new directory and NEW-CARD.md."
           # The new card is the one new top-level directory with a card.yml in it. NEW-CARD.md's
@@ -209,7 +209,7 @@ jobs:
           result=fail
           for attempt in $(seq 1 "$ATTEMPTS"); do
             echo "== attempt $attempt: check and test $card"
-            if ! (cd work/cards && ../card-kit/run check-cards --untrusted "$card/card.yml") > check.log 2>&1; then
+            if ! (cd work/cards && ../card-kit/run check-cards --untrusted --before-test "$card/card.yml") > check.log 2>&1; then
               cat check.log
               log=$(cat check.log)
             elif (cd work/cards && python3 ../card-kit/test-card.py "$card" --device "$DEVICE" --by agent) > test.log 2>&1; then
@@ -219,7 +219,7 @@ jobs:
               log=$(tail -60 test.log)
             fi
             [ "$attempt" -lt "$ATTEMPTS" ] || break
-            agent "The $card card you made did not pass. Fix the card, change nothing outside $card/, check it again with ../card-kit/run check-cards --untrusted $card/card.yml, and update NEW-CARD.md if the auth modes or app changed. What failed: $log"
+            agent "The $card card you made did not pass. Fix the card, change nothing outside $card/, check it again with ../card-kit/run check-cards --untrusted --before-test $card/card.yml, and update NEW-CARD.md if the auth modes or app changed. What failed: $log"
           done
           echo "result=$result" >> "$GITHUB_OUTPUT"
 
@@ -232,7 +232,7 @@ jobs:
           set -euo pipefail
           cd work/cards
           (../card-kit/run card-image "$CARD" || true) >/dev/null 2>&1
-          ../card-kit/run check-cards --fresh "$CARD/card.yml"
+          ../card-kit/run check-cards --fresh --untrusted "$CARD/card.yml"
           branch="agent/$CARD"
           git checkout -q -b "$branch"
           git add "$CARD"
