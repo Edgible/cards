@@ -1,0 +1,72 @@
+# The catalog site: one page per card and per need, built by card-kit's card-site. See HOW-IT-WORKS.md.
+#
+# The build job writes a plain folder with relative links, which works at any address. Each
+# channel is its own deploy job that takes that same artifact: today GitHub Pages
+# (edgible.github.io/cards). A second channel, such as cards.edgible.com served through
+# Edgible, is one more job beside deploy-pages, and the build does not change.
+#
+# SITE_URL (a repository variable) is the canonical address, written into each page, the
+# sitemap, and llms.txt. Unset, it is the GitHub Pages address. When a second channel
+# becomes the canonical one, change the variable; both copies then name it.
+#
+# It needs no secrets and runs on GitHub's own runners. It runs on every push to main, after
+# each regression (so the test results are fresh), daily for needs map changes in card-kit,
+# and by hand.
+
+name: site
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: [regression]
+    types: [completed]
+  schedule:
+    # Daily at 20:00 UTC, after the regression and the evals.
+    - cron: "0 20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time; a newer run replaces a queued one.
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/checkout@v4
+        with:
+          repository: Edgible/card-kit
+          path: .card-kit
+      - name: Latest test results
+        run: |
+          git fetch --depth 1 origin test-status
+          git show FETCH_HEAD:status.json > _status.json
+      - name: Build
+        run: |
+          .card-kit/run card-site --out _site --status _status.json \
+            --base-url "${{ vars.SITE_URL || 'https://edgible.github.io/cards' }}" \
+            --commit "$(git rev-parse HEAD)"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
