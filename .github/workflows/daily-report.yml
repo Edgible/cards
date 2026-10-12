@@ -10,9 +10,10 @@
 name: daily-report
 
 on:
-  schedule:
-    # 21:00 UTC: 07:30 in Adelaide in summer, after the regression (16:00) has had time.
-    - cron: "0 21 * * *"
+  # Each night, when the regression ends: the last of the night's jobs.
+  workflow_run:
+    workflows: [regression]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -29,6 +30,12 @@ defaults:
 
 jobs:
   report:
+    # Only the nightly chain continues: a run started by hand does not set off the next job.
+    # The workflow before it ran on the schedule, or was itself part of the chain and did not skip.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.event == 'schedule' ||
+      (github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.conclusion != 'skipped')
     # The runner's Mac, for the summary on its Claude subscription. If the Mac is off, the
     # watchdog workflow reports that instead.
     runs-on: [self-hosted, edgible-test]

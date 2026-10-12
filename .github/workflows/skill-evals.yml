@@ -6,15 +6,17 @@
 # branch; eval-summary.py combines the last seven nights into the "Skill eval report" issue.
 #
 # It runs Claude on the runner's logged-in subscription, so it runs in small batches, never
-# on a pull request: only on the schedule, or by hand.
+# on a pull request: only on the schedule, which starts the night, or by hand.
 
 name: skill-evals
 
 on:
   schedule:
-    # Daily at 13:00 UTC (23:30 in Adelaide in summer): early, so the subscription's usage
-    # window it opens has closed before the working day.
-    - cron: "0 13 * * *"
+    # Daily at 13:07 UTC (23:37 in Adelaide in summer): early, so the subscription's usage
+    # window it opens has closed before the working day. This is the night's only schedule:
+    # grow, the regression, and the daily report each start when the job before them ends.
+    # Off the hour, because GitHub delays the runs it starts on the hour most.
+    - cron: "7 13 * * *"
   workflow_dispatch:
     inputs:
       only:
