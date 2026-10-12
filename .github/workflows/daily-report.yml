@@ -1,0 +1,98 @@
+# The daily report: what last night's jobs did, and what needs a person. See HOW-IT-WORKS.md.
+#
+# It runs after the night's jobs. .github/scripts/daily_report.py gathers the facts from
+# GitHub (runs, issues, pull requests, test status), a small model adds a two-sentence
+# summary, and the report goes to the pinned "Daily report" issue: the issue's text is the
+# latest report, and each day's is added as a comment that mentions the person in the
+# repository variable REPORT_NOTIFY, so GitHub emails them. Each day's report is also kept
+# on the reports branch. daily-report-watchdog.yml says so when a morning has no report.
+
+name: daily-report
+
+on:
+  schedule:
+    # 21:00 UTC: 07:30 in Adelaide in summer, after the regression (16:00) has had time.
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # the reports branch
+  issues: write     # the Daily report issue
+
+concurrency:
+  group: daily-report
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  report:
+    # The runner's Mac, for the summary on its Claude subscription. If the Mac is off, the
+    # watchdog workflow reports that instead.
+    runs-on: [self-hosted, edgible-test]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cards
+
+      - name: Gather the facts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 cards/.github/scripts/daily_report.py > report.md && cat report.md
+
+      - name: Add a summary
+        run: |
+          set -euo pipefail
+          # Two sentences from a small model, from the facts alone. Without it, the report
+          # still goes out.
+          summary=$(claude -p "Write two or three plain sentences for a busy person, from the report below only: what happened last night, and the one thing that most needs them, or that nothing does. No headings, no lists, no new facts.
+
+          $(cat report.md)" --model haiku --max-turns 1 --output-format text 2>/dev/null || true)
+          if [ -n "$summary" ] && ! printf '%s' "$summary" | grep -qi "hit your .*limit\|not logged in"; then
+            { sed -n 1,2p report.md; echo "$summary"; echo; sed -n '3,$p' report.md; } > report.tmp && mv report.tmp report.md
+          fi
+
+      - name: Post it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTIFY: ${{ vars.REPORT_NOTIFY }}
+        run: |
+          set -euo pipefail
+          title="Daily report"
+          gh label create report --repo "$GITHUB_REPOSITORY" --color 0E8A16 --description "The daily report" 2>/dev/null || true
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --label report --json number,title \
+                   --jq ".[] | select(.title == \"$title\") | .number" | head -1)
+          if [ -z "$number" ]; then
+            url=$(gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --label report \
+                  --body "The latest daily report. Each day's is added below as a comment.")
+            number=${url##*/}
+            gh issue pin "$number" --repo "$GITHUB_REPOSITORY" || true
+          fi
+          gh issue edit "$number" --repo "$GITHUB_REPOSITORY" --body-file report.md
+          { [ -n "$NOTIFY" ] && echo "@$NOTIFY"; echo; cat report.md; } > comment.md
+          gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body-file comment.md
+
+      - name: Keep it on the reports branch
+        run: |
+          set -euo pipefail
+          day=$(date -u +%F)
+          rm -rf reports
+          if git -C cards ls-remote --exit-code --heads origin reports >/dev/null; then
+            git -C cards fetch -q --depth 1 origin reports
+            git -C cards worktree add -q ../reports FETCH_HEAD
+          else
+            mkdir reports && git -C reports init -q -b reports
+          fi
+          cp report.md "reports/$day.md"
+          cd reports
+          git add -A
+          git diff --cached --quiet && exit 0
+          git -c user.name="daily report" -c user.email="actions@github.com" commit -q -m "Daily report $day"
+          git push -q "https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY.git" HEAD:reports
+
+      - name: Clean up
+        if: always()
+        run: git -C cards worktree remove --force ../reports 2>/dev/null || rm -rf reports

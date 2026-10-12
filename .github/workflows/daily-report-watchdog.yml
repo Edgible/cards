@@ -1,0 +1,37 @@
+# Says so when a morning has no daily report: the report runs on the self-hosted runner,
+# so a Mac that is off or asleep sends nothing, and silence would look like a quiet day.
+# This runs on GitHub's own runners, two and a half hours after the report is due.
+
+name: daily-report-watchdog
+
+on:
+  schedule:
+    - cron: "30 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check today's report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTIFY: ${{ vars.REPORT_NOTIFY }}
+        run: |
+          set -euo pipefail
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --label report --json number,title \
+                   --jq '.[] | select(.title == "Daily report") | .number' | head -1)
+          [ -n "$number" ] || { echo "no Daily report issue yet"; exit 0; }
+          today=$(date -u +%F)
+          posted=$(gh api "repos/$GITHUB_REPOSITORY/issues/$number/comments?per_page=100" \
+                   --jq "[.[] | select(.created_at | startswith(\"$today\")) | select(.body | contains(\"# Daily report\"))] | length")
+          if [ "$posted" = 0 ]; then
+            { [ -n "$NOTIFY" ] && echo "@$NOTIFY"; echo
+              echo "**No daily report today ($today).** The report, and probably last night's jobs, run on the self-hosted runner, which may be off, asleep, or offline. Check the Mac, and the [Actions tab]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions) for queued runs."; } > missing.md
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body-file missing.md
+          else
+            echo "today's report is there"
+          fi
