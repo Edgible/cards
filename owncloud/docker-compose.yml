@@ -1,0 +1,30 @@
+# Compose file for the owncloud card.
+# The host port, ORG_LABEL and the admin password come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+# The first start makes the config and the admin, so nobody can claim it by being first.
+
+name: owncloud
+
+services:
+  owncloud:
+    image: owncloud/ocis:8.2.1
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c", "ocis init || true; ocis server"]
+    ports:
+      - "127.0.0.1:${OWNCLOUD_PORT:?set OWNCLOUD_PORT in card.env}:9200"
+    environment:
+      OCIS_URL: ${OWNCLOUD_URL:-https://owncloud.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}
+      # Edgible ends TLS, so ownCloud speaks plain HTTP behind it.
+      PROXY_TLS: "false"
+      PROXY_HTTP_ADDR: 0.0.0.0:9200
+      OCIS_INSECURE: "false"
+      IDM_ADMIN_PASSWORD: ${OWNCLOUD_ADMIN_PASSWORD:?set OWNCLOUD_ADMIN_PASSWORD in card.env}
+      IDM_CREATE_DEMO_USERS: "false"
+      OCIS_LOG_LEVEL: warn
+    volumes:
+      - owncloud-config:/etc/ocis
+      - owncloud-data:/var/lib/ocis
+
+volumes:
+  owncloud-config: {}
+  owncloud-data: {}
