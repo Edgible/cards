@@ -54,6 +54,8 @@ jobs:
           .card-kit/run card-site --out _site --status _status.json \
             --base-url "${{ vars.SITE_URL || 'https://edgible.github.io/cards' }}" \
             --commit "$(git rev-parse HEAD)"
+          # Files served as they are at the site's root, such as search engines' verification files.
+          cp -R .site/. _site/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
