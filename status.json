@@ -1,24 +1,24 @@
 {
   "ci": {
-    "result": "fail",
+    "result": "pass",
     "tested": "2026-10-12",
     "edgible-cli": "1.4.6",
     "files": "sha256:34e3e0c39db9c001"
   },
   "gitea": {
-    "result": "fail",
+    "result": "pass",
     "tested": "2026-10-12",
     "edgible-cli": "1.4.6",
     "files": "sha256:1c14115de48e3c93"
   },
   "immich": {
-    "result": "fail",
+    "result": "pass",
     "tested": "2026-10-12",
     "edgible-cli": "1.4.6",
     "files": "sha256:5de8bf509be98c38"
   },
   "jellyfin": {
-    "result": "fail",
+    "result": "pass",
     "tested": "2026-10-12",
     "edgible-cli": "1.4.6",
     "files": "sha256:9668d4305692658c"
@@ -60,7 +60,7 @@
     "files": "sha256:a25f47c16f7aab31"
   },
   "uptime-kuma": {
-    "result": "fail",
+    "result": "pass",
     "tested": "2026-10-12",
     "edgible-cli": "1.4.6",
     "files": "sha256:a91b802be389bcbb"
