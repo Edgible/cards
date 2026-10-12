@@ -1,0 +1,22 @@
+tested: 2026-10-13
+result: pass
+card-kit: "d1804b6"
+edgible-cli: 1.4.6
+files: sha256:13d0cf578c27f1cb
+machine: darwin/arm64, docker 29.4.3
+images:
+  - owncloud/ocis:8.2.1@sha256:5e007d702b78d70e5aeade14ec9da46044664996df6c9482630dedadcc74bffc
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    owncloud: pass
+  teardown: pass
+measured:
+  owncloud:
+    memory: 280 MB
+    images: 83 MB
+    data: 401 KB
+duration: 3m
+by: agent
