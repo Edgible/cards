@@ -7,15 +7,16 @@
 # one learned.
 #
 # It runs on a self-hosted runner that can publish apps, so it never runs on a pull request:
-# only on the schedule, or by hand from the Actions tab ("force" retests every card, "only"
+# only in the nightly chain, after grow, or by hand from the Actions tab ("force" retests every card, "only"
 # names some).
 
 name: regression
 
 on:
-  schedule:
-    # Daily at 16:00 UTC.
-    - cron: "0 16 * * *"
+  # Each night, when grow ends, so a night's jobs never overlap on the runner.
+  workflow_run:
+    workflows: [grow]
+    types: [completed]
   workflow_dispatch:
     inputs:
       force:
@@ -44,6 +45,12 @@ defaults:
 
 jobs:
   regression:
+    # Only the nightly chain continues: a run started by hand does not set off the next job.
+    # The workflow before it ran on the schedule, or was itself part of the chain and did not skip.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.event == 'schedule' ||
+      (github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.conclusion != 'skipped')
     # The runner's machine has Docker, the edgible CLI signed in, and is a serving device.
     # test-card checks that machine's own ports and Docker, so it cannot run in a container.
     runs-on: [self-hosted, edgible-test]

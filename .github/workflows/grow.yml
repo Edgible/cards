@@ -13,10 +13,10 @@
 name: grow
 
 on:
-  schedule:
-    # Daily at 14:00 UTC (00:30 in Adelaide in summer), an hour after the skill evals, so
-    # the subscription's usage window it opens has closed before the working day.
-    - cron: "0 14 * * *"
+  # Each night, when the skill evals end (they start the night; see skill-evals.yml).
+  workflow_run:
+    workflows: [skill-evals]
+    types: [completed]
   workflow_dispatch:
     inputs:
       app:
@@ -43,6 +43,12 @@ defaults:
 
 jobs:
   grow:
+    # Only the nightly chain continues: a run started by hand does not set off the next job.
+    # The workflow before it ran on the schedule, or was itself part of the chain and did not skip.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.event == 'schedule' ||
+      (github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.conclusion != 'skipped')
     runs-on: [self-hosted, edgible-test]
     timeout-minutes: 240
     steps:
@@ -101,12 +107,15 @@ jobs:
         id: queue
         env:
           GH_TOKEN: ${{ github.token }}
+          EVALS: ${{ github.event.workflow_run.conclusion }}
         run: |
           set -euo pipefail
           open=$(gh pr list --repo "$GITHUB_REPOSITORY" --label agent-card --state open --json number --jq length)
           echo "$open agent-made pull requests are waiting for review (at most $MAX_OPEN)"
           # If tonight's skill evals stopped early, such as at the subscription's usage limit,
           # this long session would too: skip tonight.
+          # In the nightly chain, the evals that started this run; by hand, today's, if any.
+          [ "$GITHUB_EVENT_NAME" = workflow_run ] && evals=$EVALS || \
           evals=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow skill-evals.yml --limit 1 --json conclusion,createdAt \
                   --jq '.[0] | select(.createdAt[0:10] == (now | strftime("%Y-%m-%d"))) | .conclusion')
           echo "tonight's skill evals: ${evals:-not run}"
