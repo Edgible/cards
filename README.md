@@ -2,6 +2,8 @@
 
 Edgible cards let a self-hosted setup be shared and reproduced. A card records the programs, the images, the ports, the auth mode on each hostname, and which apps share a serving device. Someone else fetches that card, edits `card.env`, starts the containers, and publishes the apps. The card leaves out device names, hostnames, and the organization id, so the next person maps each place to a serving device they have.
 
+Browse the cards, and the needs they answer, on the catalog site: [edgible.github.io/cards](https://edgible.github.io/cards/). It is rebuilt from this repo after every change and every regression.
+
 Why cards exist, and what they promise, is in [ABOUT.md](ABOUT.md). How the whole system works, including every automated job and where its results go, is in [HOW-IT-WORKS.md](HOW-IT-WORKS.md). Each morning's summary of those jobs, and anything that needs a person, is in the pinned [Daily report](https://github.com/Edgible/cards/issues?q=is%3Aissue+label%3Areport) issue.
 
 Each top-level directory with a `card.yml` in it is one card, and its README is how to run it. There are two types:
