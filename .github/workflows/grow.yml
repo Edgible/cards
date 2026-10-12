@@ -129,7 +129,9 @@ jobs:
           APP: ${{ inputs.app }}
         run: |
           set -euo pipefail
-          rm -rf card-kit work agent-home
+          # Files from an earlier night stay in this folder unless removed, and the issue
+          # step would report an old night's error as tonight's.
+          rm -rf card-kit work agent-home pick.json agent.log check.log test.log issue.md pr.md
           git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
           # Apps proposed before, as a pull request or an issue, open or closed, are not picked again.
           proposed=$( { gh pr list --repo "$GITHUB_REPOSITORY" --label agent-card --state all --limit 500 --json title --jq '.[].title'
@@ -178,8 +180,19 @@ jobs:
           Write the card in a new top-level directory named for the app (lowercase, hyphens), with metadata.type: app, copying the shape of the closest existing app card. Mount only named volumes or paths under ./ : nothing on the host, no Docker socket, no privileged mode or host network. Choose each hostname's auth mode by who calls it, from the cards README's table. Write README.md with ../card-kit/run card-readme (write its notes as <name>-readme.yml at the repo root, not in the card directory), and check with ../card-kit/run check-cards --untrusted <name>/card.yml until it says ok. You cannot run the card or test-card here; the next step does.
 
           Write NEW-CARD.md at the repo root: the app's name and directory on the first line as 'card: <name>', then why you chose it over the other candidates, and each hostname's auth mode and why. Change nothing outside the new directory and NEW-CARD.md."
-          card=$(sed -nE '1s/^card: *([a-z0-9-]+).*/\1/p' work/cards/NEW-CARD.md 2>/dev/null || true)
-          [ -n "$card" ] && [ -f "work/cards/$card/card.yml" ] || { echo "the agent made no card"; echo "card=" >> "$GITHUB_OUTPUT"; echo "result=fail" >> "$GITHUB_OUTPUT"; exit 0; }
+          # The new card is the one new top-level directory with a card.yml in it. NEW-CARD.md's
+          # first line names it too, but an agent may write that line loosely ("card: Sync-in"),
+          # so it decides only when there is not exactly one new directory.
+          new=$(cd work/cards && git status --porcelain | sed -nE 's#^\?\? ([a-z0-9-]+)/$#\1#p' \
+                | while read -r d; do [ -f "$d/card.yml" ] && echo "$d"; done || true)
+          if [ "$(printf '%s\n' "$new" | grep -c . || true)" = 1 ]; then
+            card=$new
+          else
+            card=$(sed -nE '1s/^card: *([A-Za-z0-9-]+).*/\1/p' work/cards/NEW-CARD.md 2>/dev/null | tr 'A-Z' 'a-z' || true)
+          fi
+          [ -n "$card" ] && [ -f "work/cards/$card/card.yml" ] || {
+            echo "the agent made no card (new directories with a card.yml: ${new:-none})" | tee check.log
+            echo "card=" >> "$GITHUB_OUTPUT"; echo "result=fail" >> "$GITHUB_OUTPUT"; exit 0; }
           echo "card=$card" >> "$GITHUB_OUTPUT"
           # The agent may change only its own card and NEW-CARD.md.
           extra=$(cd work/cards && git status --porcelain | grep -vE "^\?\? ($card/|NEW-CARD\.md|[a-z0-9-]+-readme\.yml)$" || true)
@@ -262,6 +275,8 @@ jobs:
           {
             echo "The nightly grow job tried to make an app card for **$name** (category: $(jq -r '.category // "asked for by hand"' pick.json)) and could not make one that passes."
             echo
+            echo "Offered: $(jq -r '[.candidates[].name] | join(", ")' pick.json)."
+            echo
             [ -f work/cards/NEW-CARD.md ] && { echo "## The agent's notes"; echo; tail -n +2 work/cards/NEW-CARD.md; echo; }
             echo "## Where it stopped"
             echo
@@ -275,4 +290,4 @@ jobs:
 
       - name: Clean up
         if: always()
-        run: rm -rf work agent-home card-kit
+        run: rm -rf work agent-home card-kit agent.log check.log test.log

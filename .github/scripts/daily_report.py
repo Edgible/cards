@@ -3,7 +3,7 @@
 
     GH_TOKEN=... python3 .github/scripts/daily_report.py > report.md
 
-It reads GitHub only (runs, issues, pull requests, the test-status branch), through the gh
+It reads GitHub only (runs, issues, pull requests, main's history, the test-status branch), through the gh
 CLI, so every number in it is exact. It covers the last 24 hours, and starts with the
 actions for a person, each with its link. The workflow adds a short summary and posts it.
 """
@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "Edgible/cards")
 KIT = "Edgible/card-kit"
+SITE = os.environ.get("SITE_URL") or "https://edgible.github.io/cards"
 NOW = datetime.now(timezone.utc)
 SINCE = NOW - timedelta(hours=24)
 JOBS = {"regression": "Cards regression", "skill-evals": "Skill evals", "grow": "Grow"}
@@ -59,9 +60,41 @@ def status() -> dict:
     return json.loads(base64.b64decode(out.stdout.strip() or "e30="))
 
 
+def card_changes() -> tuple[list[str], list[str], list[str]]:
+    """The cards added, changed, and removed on main in the last 24 hours, by card name."""
+    since = SINCE.strftime("%Y-%m-%dT%H:%M:%SZ")
+    before = gh("api", f"repos/{REPO}/commits?sha=main&until={since}&per_page=1") or []
+    head = gh("api", f"repos/{REPO}/commits/main") or {}
+    if not before or not head or before[0]["sha"] == head["sha"]:
+        return [], [], []
+    files = (gh("api", f"repos/{REPO}/compare/{before[0]['sha']}...{head['sha']}") or {}).get("files") or []
+    tree = gh("api", f"repos/{REPO}/git/trees/{head['sha']}?recursive=1") or {}
+    cards = {t["path"].split("/")[0] for t in tree.get("tree") or []
+             if t["path"].count("/") == 1 and t["path"].endswith("/card.yml")}
+    added = sorted(f["filename"].split("/")[0] for f in files
+                   if f["filename"].count("/") == 1 and f["filename"].endswith("/card.yml") and f["status"] == "added")
+    removed = sorted(f["filename"].split("/")[0] for f in files
+                     if f["filename"].count("/") == 1 and f["filename"].endswith("/card.yml") and f["status"] == "removed")
+    changed = sorted({f["filename"].split("/")[0] for f in files if "/" in f["filename"]} & cards - set(added))
+    return added, changed, removed
+
+
 def main() -> int:
     actions: list[str] = []
     body: list[str] = []
+
+    # Cards that landed on main, made by a person or merged from grow
+    added, changed, removed = card_changes()
+    body += ["## Cards", ""]
+    for c in added:
+        body.append(f"- Added: [{c}]({SITE}/{c}/) ([source](https://github.com/{REPO}/tree/main/{c}))")
+    if changed:
+        body.append(f"- Changed: {', '.join(changed)}. The regression retests them on its next run.")
+    if removed:
+        body.append(f"- Removed: {', '.join(removed)}.")
+    if not (added or changed or removed):
+        body.append("- No card added, changed, or removed.")
+    body.append("")
 
     # Cards regression
     reg = runs("regression")
