@@ -1,0 +1,175 @@
+{
+  "meta": {
+    "date": "2026-10-13",
+    "rotation_day": 1,
+    "card_kit": "b39a7bb",
+    "claude": "2.1.296 (Claude Code)",
+    "mcp": "edgible find and describe",
+    "judge_model": "sonnet",
+    "not_run": [],
+    "stopped": ""
+  },
+  "results": [
+    {
+      "id": "physio-clinic",
+      "pass": true,
+      "should_load": true,
+      "loaded": true,
+      "loaded_at": 1,
+      "tools": [
+        "Skill",
+        "Grep",
+        "ToolSearch",
+        "Read",
+        "mcp__edgible__find"
+      ],
+      "expect_passed": 4,
+      "expect_total": 4,
+      "must_not_violated": [],
+      "principles_failed": [],
+      "verdict": {
+        "expect": [
+          {
+            "item": "leads with practice-management tools built for clinics",
+            "pass": true,
+            "evidence": "Route 1 is \"A practice-management system that covers both\" listing Cliniko, Jane, WriteUpp and Power Diary."
+          },
+          {
+            "item": "treats exercise plans as patient health records, regulated data",
+            "pass": true,
+            "evidence": "\"Plans linked to named patients count as health records... HIPAA in the US, UK/EU GDPR, or the Australian Privacy Act\""
+          },
+          {
+            "item": "self-hosting at most for the parts without patient records",
+            "pass": true,
+            "evidence": "\"Self-hosting (only for booking, and only with care)\" and \"I'd advise against self-hosting the exercise-plan side.\" Booking still involves patient names, but it is limited and caveated."
+          },
+          {
+            "item": "asks which country, for the privacy rules",
+            "pass": true,
+            "evidence": "\"Which country are you in? That decides the privacy rules and which vendors are well supported locally.\""
+          }
+        ],
+        "must_not": [
+          {
+            "item": "offer to self-host patient records on a clinic or home machine",
+            "violated": false,
+            "evidence": "\"It would need to run on a cloud server, not a clinic PC, so it stays up.\" It also advises against self-hosting exercise plans."
+          },
+          {
+            "item": "leave out privacy and compliance",
+            "violated": false,
+            "evidence": "It names HIPAA, GDPR and the Australian Privacy Act, and says vendors handle compliance."
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "It opens with \"You have three realistic routes\" and lists the options right away."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": true,
+            "evidence": "It lists three routes and says \"Someone has to look after it. That means updates, backups, and fixing it when it breaks.\""
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": true,
+            "evidence": "It asks two numbered questions, though question 2 bundles several sub-questions."
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "It only recommends trials and builds nothing."
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": true,
+            "evidence": "\"Patients sign in with the app's own accounts, because they aren't on your staff team. Sign-up should be closed or approved by you.\""
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": true,
+            "evidence": "It covers health records and regulation, and says to close or approve sign-up. It says little about per-physio access to patient data."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": true,
+            "evidence": "\"I'd advise against self-hosting the exercise-plan side\" with the compliance reason, and it points to vendors instead."
+          }
+        ],
+        "better": "Give a rough price range or a concrete cheapest-path example for 3 practitioners, and say who can see which patient data, such as each physio seeing only their own patients."
+      }
+    },
+    {
+      "id": "negative-react-error",
+      "pass": true,
+      "should_load": false,
+      "loaded": false,
+      "loaded_at": null,
+      "tools": [
+        "Glob",
+        "Glob"
+      ],
+      "expect_passed": 1,
+      "expect_total": 1,
+      "must_not_violated": [],
+      "principles_failed": [],
+      "verdict": {
+        "expect": [
+          {
+            "item": "the skill does not load",
+            "pass": true,
+            "evidence": "The answer is a plain React debugging response with no mention of any hosting/self-hosting skill or its workflow."
+          }
+        ],
+        "must_not": [
+          {
+            "item": "mention self-hosting or Edgible",
+            "violated": false,
+            "evidence": "No mention of self-hosting or Edgible anywhere in the answer."
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "It states it couldn't find the file, then explains the usual causes and fixes for the .map() on undefined error."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": null,
+            "evidence": "Hosting is not relevant to this prompt."
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": true,
+            "evidence": "It makes one request, for the project path or the file contents: \"If you send me the project path or paste the file, I'll make the exact fix.\""
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "It changes nothing and says it couldn't find the file."
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": null,
+            "evidence": "Not applicable; there is no hostname or auth question here."
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": null,
+            "evidence": "Not applicable to a debugging question."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": null,
+            "evidence": "No poor fit is involved."
+          }
+        ],
+        "better": "It could have searched more widely for ProductList.jsx, for example outside the temp directory, and then pointed at the likely cause on line 14 instead of giving a generic list."
+      }
+    }
+  ]
+}
