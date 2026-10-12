@@ -149,7 +149,8 @@ jobs:
           echo "proposed before: ${proposed:-none}"
           if [ -n "$APP" ]; then
             if ! [[ "$APP" =~ ^[A-Za-z0-9\ ._-]+$ ]]; then echo "app: a name, letters, digits, spaces, . _ -" >&2; exit 2; fi
-            jq -n --arg app "$APP" '{category: null, candidates: [{name: $app}]}' > pick.json
+            # The named app, and its needs-map category, so the merged card lands in the map.
+            (cd cards && ../card-kit/run pick-app --app "$APP") > pick.json
           else
             (cd cards && ../card-kit/run pick-app --exclude $proposed) > pick.json || { echo "no gap left to fill"; echo "none=true" >> "$GITHUB_OUTPUT"; exit 0; }
           fi
