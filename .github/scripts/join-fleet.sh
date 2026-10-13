@@ -26,7 +26,14 @@ fi
 
 echo "== Docker and tools"
 sudo apt-get update -qq
-sudo apt-get install -y -qq docker.io docker-compose-v2 python3 curl jq dnsutils git >/dev/null
+sudo apt-get install -y -qq python3 curl jq dnsutils git
+# A machine that already has Docker, such as Docker's own docker-ce packages, keeps it:
+# Ubuntu's docker.io would clash with them.
+if command -v docker >/dev/null && docker compose version >/dev/null 2>&1; then
+  echo "Docker is already installed: $(docker --version)"
+else
+  sudo apt-get install -y -qq docker.io docker-compose-v2
+fi
 sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"
 
