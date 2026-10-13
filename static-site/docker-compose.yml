@@ -1,0 +1,55 @@
+# Compose file for the static-site card.
+# The host port and the site's source come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+# --wait returns once the first copy of the site is in place and Caddy serves it.
+
+name: static-site
+
+services:
+  # Downloads the site from STATIC_SITE_SOURCE and puts each new version live. It runs as
+  # the image's own user, not root, and only Caddy reads what it writes.
+  static-site-sync:
+    image: curlimages/curl:8.22.0
+    restart: unless-stopped
+    entrypoint: ["sh", "/sync.sh"]
+    environment:
+      STATIC_SITE_SOURCE: ${STATIC_SITE_SOURCE:?set STATIC_SITE_SOURCE in card.env}
+      STATIC_SITE_STRIP: ${STATIC_SITE_STRIP:-1}
+      STATIC_SITE_EVERY: ${STATIC_SITE_EVERY:-300}
+    volumes:
+      - ./sync.sh:/sync.sh:ro
+      # Mounted on the image user's home, so the volume is theirs to write.
+      - static-site-www:/home/curl_user
+    healthcheck:
+      test: ["CMD", "test", "-f", "/home/curl_user/current/index.html"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
+  static-site:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    depends_on:
+      static-site-sync:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${STATIC_SITE_PORT:?set STATIC_SITE_PORT in card.env}:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # nocopy: the volume takes its owner from the sync container's image, not from
+      # Caddy's /srv, whichever container Compose happens to create first.
+      - type: volume
+        source: static-site-www
+        target: /srv
+        read_only: true
+        volume:
+          nocopy: true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  static-site-www: {}
