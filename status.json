@@ -6,10 +6,11 @@
     "files": "sha256:34e3e0c39db9c001"
   },
   "gitea": {
-    "result": "pass",
-    "tested": "2026-10-12",
+    "result": "fail",
+    "tested": "2026-10-13",
     "edgible-cli": "1.4.6",
-    "files": "sha256:1c14115de48e3c93"
+    "files": "sha256:1c14115de48e3c93",
+    "device": "lggram17ubuntu26"
   },
   "immich": {
     "result": "pass",
@@ -55,9 +56,10 @@
   },
   "umami": {
     "result": "pass",
-    "tested": "2026-10-12",
+    "tested": "2026-10-14",
     "edgible-cli": "1.4.6",
-    "files": "sha256:a25f47c16f7aab31"
+    "files": "sha256:a25f47c16f7aab31",
+    "device": "macbookair"
   },
   "uptime-kuma": {
     "result": "pass",
