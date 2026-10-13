@@ -3,7 +3,7 @@
 # The build job writes a plain folder with relative links, which works at any address. Each
 # channel is its own deploy job that takes that same artifact: deploy-pages for GitHub Pages
 # (edgible.github.io/cards), and deploy-branch for the site branch, which the static-site
-# card downloads to serve cards.edgible.com through Edgible.
+# card downloads to serve cards.edgible.org through Edgible.
 #
 # SITE_URL (a repository variable) is the canonical address, written into each page, the
 # sitemap, and llms.txt. Unset, it is the GitHub Pages address. When a second channel
