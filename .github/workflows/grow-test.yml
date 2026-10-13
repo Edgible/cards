@@ -50,10 +50,11 @@ jobs:
         env:
           CARD: ${{ inputs.card }}
           # The machine's own device (TEST_DEVICE in its runner's .env), else the repository variable.
-          REPO_DEVICE: ${{ vars.TEST_DEVICE }}
+          FALLBACK_DEVICE: ${{ vars.TEST_DEVICE }}
         run: |
           set -euo pipefail
-          DEVICE=${TEST_DEVICE:-$REPO_DEVICE}
+          DEVICE=${TEST_DEVICE:-$FALLBACK_DEVICE}
+          if [ -n "${TEST_DEVICE:-}" ]; then echo "testing on $DEVICE (from this machine's runner .env)"; else echo "testing on $DEVICE (the repository's fallback; this machine sets no TEST_DEVICE)"; fi
           [ -n "$DEVICE" ] || { echo "set TEST_DEVICE in the runner's .env, or the repository variable TEST_DEVICE" >&2; exit 2; }
           [[ "$CARD" =~ ^[a-z0-9-]+$ ]] || { echo "not a card name: $CARD" >&2; exit 2; }
           rm -rf card-kit out test.log check.log
