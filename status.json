@@ -70,7 +70,7 @@
   },
   "umami": {
     "result": "pass",
-    "tested": "2026-10-14",
+    "tested": "2026-10-13",
     "edgible-cli": "1.4.6",
     "files": "sha256:a25f47c16f7aab31",
     "device": "macbookair"
