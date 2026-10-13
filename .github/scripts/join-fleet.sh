@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Join a Linux machine (or WSL2 Ubuntu) to the cards' test fleet: Docker, the tools test-card
-# uses, and a GitHub Actions runner for Edgible/cards that tests on this machine's own
+# uses, and a GitHub Actions runner for edgible-org/cards that tests on this machine's own
 # Edgible device. Run it as your normal user, not root, on a machine whose Edgible agent is
 # already a serving device in the test organization and whose `edgible` CLI is signed in.
 #
-#   curl -fsSL https://raw.githubusercontent.com/Edgible/cards/main/.github/scripts/join-fleet.sh \
+#   curl -fsSL https://raw.githubusercontent.com/edgible-org/cards/main/.github/scripts/join-fleet.sh \
 #     | bash -s -- <registration-token> <edgible-device-name> <labels>
 #
 # The registration token comes from a maintainer and lasts an hour. Labels describe the
@@ -62,7 +62,7 @@ if [ ! -f .runner ]; then
   curl -fsSLo runner.tgz "https://github.com/actions/runner/releases/download/v$v/actions-runner-linux-$arch-$v.tar.gz"
   tar xzf runner.tgz && rm runner.tgz
   sudo ./bin/installdependencies.sh >/dev/null
-  ./config.sh --url https://github.com/Edgible/cards --token "$token" \
+  ./config.sh --url https://github.com/edgible-org/cards --token "$token" \
     --name "$device" --labels "$labels" --unattended
 fi
 grep -q '^TEST_DEVICE=' .env 2>/dev/null || printf 'LANG=C.UTF-8\nTEST_DEVICE=%s\n' "$device" >> .env

@@ -2,7 +2,7 @@
 #
 # The build job writes a plain folder with relative links, which works at any address. Each
 # channel is its own deploy job that takes that same artifact: deploy-pages for GitHub Pages
-# (edgible.github.io/cards), and deploy-branch for the site branch, which the static-site
+# (edgible-org.github.io/cards), and deploy-branch for the site branch, which the static-site
 # card downloads to serve cards.edgible.org through Edgible.
 #
 # SITE_URL (a repository variable) is the canonical address, written into each page, the
@@ -43,7 +43,7 @@ jobs:
           ref: main
       - uses: actions/checkout@v4
         with:
-          repository: Edgible/card-kit
+          repository: edgible-org/card-kit
           path: .card-kit
       - name: Latest test results
         run: |
@@ -52,7 +52,7 @@ jobs:
       - name: Build
         run: |
           .card-kit/run card-site --out _site --status _status.json \
-            --base-url "${{ vars.SITE_URL || 'https://edgible.github.io/cards' }}" \
+            --base-url "${{ vars.SITE_URL || 'https://edgible-org.github.io/cards' }}" \
             --commit "$(git rev-parse HEAD)"
           # Files served as they are at the site's root, such as search engines' verification files.
           cp -R .site/. _site/
@@ -76,7 +76,7 @@ jobs:
   deploy-branch:
     # The same build as the site branch: one commit, replaced only when the site changed.
     # Any machine can download it as
-    # https://github.com/Edgible/cards/archive/refs/heads/site.tar.gz, which is what the
+    # https://github.com/edgible-org/cards/archive/refs/heads/site.tar.gz, which is what the
     # static-site card serves.
     needs: build
     runs-on: ubuntu-latest

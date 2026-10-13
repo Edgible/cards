@@ -15,9 +15,9 @@ import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 
-REPO = os.environ.get("GITHUB_REPOSITORY", "Edgible/cards")
-KIT = "Edgible/card-kit"
-SITE = os.environ.get("SITE_URL") or "https://edgible.github.io/cards"
+REPO = os.environ.get("GITHUB_REPOSITORY", "edgible-org/cards")
+KIT = "edgible-org/card-kit"
+SITE = os.environ.get("SITE_URL") or "https://cards.edgible.org"
 NOW = datetime.now(timezone.utc)
 SINCE = NOW - timedelta(hours=24)
 JOBS = {"regression": "Cards regression", "skill-evals": "Skill evals", "grow": "Grow"}

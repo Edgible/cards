@@ -15,7 +15,7 @@ result:
 
 ## Review
 
-From [Reviewing a card](https://github.com/Edgible/cards/blob/main/README.md#reviewing-a-card). Tick what you checked.
+From [Reviewing a card](https://github.com/edgible-org/cards/blob/main/README.md#reviewing-a-card). Tick what you checked.
 
 - [ ] Default passwords are changed or generated, and the README says how to sign in the first time.
 - [ ] Every secret is empty in git, with a `# Generate with:` comment.
@@ -24,6 +24,6 @@ From [Reviewing a card](https://github.com/Edgible/cards/blob/main/README.md#rev
 - [ ] `test.yml` passes, and its images are the ones in the Compose files. An app card must have one.
 - [ ] Nothing names a device, a hostname, or an organization.
 - [ ] `check-cards --fresh` passes.
-- [ ] An app card's app is not on [What is not an app card](https://github.com/Edgible/cards/blob/main/README.md#what-is-not-an-app-card).
+- [ ] An app card's app is not on [What is not an app card](https://github.com/edgible-org/cards/blob/main/README.md#what-is-not-an-app-card).
 
 - [ ] An AI agent made this pull request, and I have read what it wrote.

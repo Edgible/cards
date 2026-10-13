@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf card-kit results
-          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          git clone -q --depth 1 https://github.com/edgible-org/card-kit.git card-kit
           if git -C cards ls-remote --exit-code --heads origin eval-results >/dev/null; then
             git -C cards fetch -q --depth 1 origin eval-results
             git -C cards worktree add -q ../results FETCH_HEAD

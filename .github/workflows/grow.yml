@@ -74,8 +74,8 @@ jobs:
           merged=$(GH_TOKEN=${{ github.token }} gh pr list --repo "$GITHUB_REPOSITORY" --label agent-card --state merged --limit 200 \
                    --json title,body --jq '.[] | [(.title | sub("^New app card: "; "")), ((.body | capture("Category: (?<c>[^\n]+)").c) // "")] | @tsv')
           [ -n "$merged" ] || { echo "no merged agent-made cards"; exit 0; }
-          rm -rf kit-map && git clone -q --depth 1 https://github.com/Edgible/card-kit.git kit-map
-          if gh pr list --repo Edgible/card-kit --state open --search "head:needs-map/agent-cards" --json number --jq length | grep -qv '^0$'; then
+          rm -rf kit-map && git clone -q --depth 1 https://github.com/edgible-org/card-kit.git kit-map
+          if gh pr list --repo edgible-org/card-kit --state open --search "head:needs-map/agent-cards" --json number --jq length | grep -qv '^0$'; then
             echo "a needs-map pull request is already open"; exit 0
           fi
           printf '%s\n' "$merged" | python3 -c '
@@ -108,8 +108,8 @@ jobs:
           git add skills/edgible-cards/needs-map.yaml
           git -c user.name="cards grow" -c user.email="actions@github.com" commit -q -m "Needs map: add merged agent-made cards" -m "$(cat ADDED)"
           git push -q origin "$branch"
-          gh pr create --repo Edgible/card-kit --base main --head "$branch" --title "Needs map: add merged agent-made cards" \
-            --body "Adds app cards merged into Edgible/cards from the nightly grow job to their categories in the needs map, so those categories stop counting as gaps:
+          gh pr create --repo edgible-org/card-kit --base main --head "$branch" --title "Needs map: add merged agent-made cards" \
+            --body "Adds app cards merged into edgible-org/cards from the nightly grow job to their categories in the needs map, so those categories stop counting as gaps:
 
           $(sed 's/^/- /' ADDED)
 
@@ -166,7 +166,7 @@ jobs:
           set -euo pipefail
           # Files from an earlier night stay in this folder unless removed.
           rm -rf card-kit work agent-home out pick.json agent.log check.log
-          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          git clone -q --depth 1 https://github.com/edgible-org/card-kit.git card-kit
           # Apps proposed before, as a pull request or an issue, open or closed, are not picked again.
           proposed=$( { gh pr list --repo "$GITHUB_REPOSITORY" --label agent-card --state all --limit 500 --json title --jq '.[].title'
                         gh issue list --repo "$GITHUB_REPOSITORY" --label agent-card --state all --limit 500 --json title --jq '.[].title'; } \
@@ -189,7 +189,7 @@ jobs:
           set -euo pipefail
           mkdir -p work && cp -R cards work/cards
           picked=$(jq -c '{category, entry: (.entry // {} | {jobs, exposure, ask}), candidates}' pick.json)
-          cards/.github/scripts/grow-agent.sh "Make one new Edgible app card, following the edgible-cards skill's \"Build an app card\" section and the card-kit README. You are in a checkout of Edgible/cards; card-kit is at ../card-kit.
+          cards/.github/scripts/grow-agent.sh "Make one new Edgible app card, following the edgible-cards skill's \"Build an app card\" section and the card-kit README. You are in a checkout of edgible-org/cards; card-kit is at ../card-kit.
 
           Choose ONE app from these candidates: the one that does the category's jobs best, not the most starred. Check that it has a maintained, multi-architecture (amd64 and arm64) container image with a version tag, using docker manifest inspect; skip any that does not. Candidates and the need they meet: $picked
 
@@ -270,7 +270,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf card-kit work agent-home out agent.log check.log
-          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          git clone -q --depth 1 https://github.com/edgible-org/card-kit.git card-kit
           mkdir -p work && cp -R cards work/cards
           cp -R "tested/$CARD" "work/cards/$CARD"
           cp tested/NEW-CARD.md work/cards/ 2>/dev/null || true
@@ -340,7 +340,7 @@ jobs:
           done
           category=$(jq -r '.category // "asked for by hand"' "$pick")
           if [ -n "$passed" ]; then
-            rm -rf card-kit && git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+            rm -rf card-kit && git clone -q --depth 1 https://github.com/edgible-org/card-kit.git card-kit
             cp -R "$passed/$CARD" "cards/$CARD"
             cd cards
             (../card-kit/run card-image "$CARD" || true) >/dev/null 2>&1
