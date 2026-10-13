@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ fromJSON(format('["self-hosted","{0}"]', inputs.label)) }}
     timeout-minutes: 15
     env:
-      REPO_DEVICE: ${{ vars.TEST_DEVICE }}
+      FALLBACK_DEVICE: ${{ vars.TEST_DEVICE }}
     steps:
       - name: machine
         run: |
@@ -56,8 +56,8 @@ jobs:
           if ! command -v edgible >/dev/null; then echo "no Edgible CLI on this machine"; exit 0; fi
           edgible --version
           if [ -n "${TEST_DEVICE:-}" ]; then echo "device: $TEST_DEVICE (from the runner's .env)"
-          else echo "device: ${REPO_DEVICE:-none} (from the repository variable)"; fi
-          device=${TEST_DEVICE:-$REPO_DEVICE}
+          else echo "device: ${FALLBACK_DEVICE:-none} (from the repository variable)"; fi
+          device=${TEST_DEVICE:-$FALLBACK_DEVICE}
           edgible device list --json | python3 -c "
           import json, sys
           devices = json.load(sys.stdin)
@@ -75,7 +75,8 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$CARD" =~ ^[a-z0-9-]+$ ]] || { echo "not a card name: $CARD" >&2; exit 2; }
-          device=${TEST_DEVICE:-$REPO_DEVICE}
+          device=${TEST_DEVICE:-$FALLBACK_DEVICE}
+          if [ -n "${TEST_DEVICE:-}" ]; then echo "testing on $device (from this machine's runner .env)"; else echo "testing on $device (the repository's fallback; this machine sets no TEST_DEVICE)"; fi
           rm -rf cards card-kit tested && mkdir tested
           git clone -q --depth 1 "https://github.com/$GITHUB_REPOSITORY.git" cards
           git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
