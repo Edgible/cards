@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: static-site
+  description: A static website from a tarball URL, served by Caddy and kept up to date
+  type: app
+
+applications:
+  - name: static-site
+    what: Caddy serving the site's files, open to anyone
+    from: caddy:2.11.7-alpine
+    port: 8080
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [none]
+    place: static-site
+
+places:
+  static-site:
+    memory: 256 MB
+    disk: 1.5 GB
+    arch: [amd64, arm64, arm]
+    gpu: none
