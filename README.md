@@ -1,20 +1,24 @@
 # edgible-cards skill evals: 2026-10-07 to 2026-10-13
 
-**4 of 4** held-out prompts pass, each at its latest run in the last 7 days (3 nightly runs). Skill from card-kit `b39a7bb`, `bb7ce03`.
+**3 of 4** held-out prompts pass, each at its latest run in the last 7 days (3 nightly runs). Skill from card-kit `988676e`, `b39a7bb`.
 
 | Prompt | Run | Result | Skill loaded | expect | must_not broken |
 | --- | --- | --- | --- | --- | --- |
+| physio-clinic | 2026-10-13 | FAIL | no (WRONG) | 2/4 | 1 |
 | dementia-startup | 2026-10-11 | pass | yes (right) | 3/3 | 0 |
 | negative-react-error | 2026-10-13 | pass | no (right) | 1/1 | 0 |
-| physio-clinic | 2026-10-12 | pass | yes (right) | 4/4 | 0 |
 | tennis-club | 2026-10-11 | pass | yes (right) | 5/5 | 0 |
 
 ## Failing prompts
 
-None.
+**physio-clinic** (2026-10-13)
+- Missed: leads with practice-management tools built for clinics. Leads with 'Cheap hosted tools' listing physio-specific exercise platforms and general booking tools; it downplays all-in-one practice management as pricier, and doesn't lead with it.
+- Missed: self-hosting at most for the parts without patient records. Suggests self-hosting booking (Cal.com, Easy!Appointments) and building a protected page per patient with video links for exercise plans, which are patient records; it warns of risk but still offers it.
+- Broke: offer to self-host patient records on a clinic or home machine. 'You'd probably need to build something simple, such as a protected page per patient with video links' under self-hosting, and a DIY option of private pages/shared documents for each patient's plan.
+
 ## What would make answers better
 
 - dementia-startup: Say briefly who inside the app can see which memories (patient, each family member, carers), since stored personal memories make in-app access control a core design question.
-- negative-react-error: Search the project more thoroughly (for example, by globbing for *.jsx in subdirectories) before concluding the file is missing, then fix line 14 directly.
-- physio-clinic: Give a rough price range or a concrete cheapest-path example for 3 practitioners, and say who can see which patient data, such as each physio seeing only their own patients.
+- negative-react-error: It could have put the most likely fix first in a short reply, with the project-path request at the end, instead of listing four generic causes.
+- physio-clinic: Lead with clinic-focused hosted practice-management or physio platforms that cover bookings and exercise plans and offer compliant data handling. Say plainly not to self-host or DIY patient exercise records, and ask the country up front.
 - tennis-club: Briefly note that the booking app will hold members' names and contact details, and say whether members can see each other's bookings and details, so the committee can decide what's appropriate.

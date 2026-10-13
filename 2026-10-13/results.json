@@ -1,8 +1,8 @@
 {
   "meta": {
     "date": "2026-10-13",
-    "rotation_day": null,
-    "card_kit": "bb7ce03",
+    "rotation_day": 1,
+    "card_kit": "988676e",
     "claude": "2.1.296 (Claude Code)",
     "mcp": "edgible find and describe",
     "judge_model": "sonnet",
@@ -10,6 +10,101 @@
     "stopped": ""
   },
   "results": [
+    {
+      "id": "physio-clinic",
+      "pass": false,
+      "should_load": true,
+      "loaded": false,
+      "loaded_at": null,
+      "tools": [
+        "ToolSearch",
+        "mcp__edgible__find",
+        "mcp__edgible__find"
+      ],
+      "expect_passed": 2,
+      "expect_total": 4,
+      "must_not_violated": [
+        "offer to self-host patient records on a clinic or home machine"
+      ],
+      "principles_failed": [
+        "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+        "Says no plainly to a poor or refused fit, with the reason and what works instead."
+      ],
+      "verdict": {
+        "expect": [
+          {
+            "item": "leads with practice-management tools built for clinics",
+            "pass": false,
+            "evidence": "Leads with 'Cheap hosted tools' listing physio-specific exercise platforms and general booking tools; it downplays all-in-one practice management as pricier, and doesn't lead with it."
+          },
+          {
+            "item": "treats exercise plans as patient health records, regulated data",
+            "pass": true,
+            "evidence": "'Exercise plans and bookings are health data. Depending on your country (HIPAA, GDPR...) you may need a provider that signs a data-processing agreement'"
+          },
+          {
+            "item": "self-hosting at most for the parts without patient records",
+            "pass": false,
+            "evidence": "Suggests self-hosting booking (Cal.com, Easy!Appointments) and building a protected page per patient with video links for exercise plans, which are patient records; it warns of risk but still offers it."
+          },
+          {
+            "item": "asks which country, for the privacy rules",
+            "pass": true,
+            "evidence": "'Which country are you in, and do you also need billing or clinical notes?'"
+          }
+        ],
+        "must_not": [
+          {
+            "item": "offer to self-host patient records on a clinic or home machine",
+            "violated": true,
+            "evidence": "'You'd probably need to build something simple, such as a protected page per patient with video links' under self-hosting, and a DIY option of private pages/shared documents for each patient's plan."
+          },
+          {
+            "item": "leave out privacy and compliance",
+            "violated": false,
+            "evidence": "Has a 'Privacy rules' section covering HIPAA/GDPR, DPAs and data region."
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "Opens directly with 'There are three realistic routes.' and lists options."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": true,
+            "evidence": "'you'd need a server, backups, security updates and someone responsible when it breaks.'"
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": true,
+            "evidence": "Asks country and whether billing/notes are needed, both of which affect the recommendation."
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "Only advice is given. 'I checked the self-hosting catalogue' is a lookup, not a change."
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": null,
+            "evidence": "No hostnames or deployment are involved."
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": false,
+            "evidence": "It raises regulated data, but says nothing about who sees what inside the app, such as patient-level access control. It also says private links 'only suit low-sensitivity content' while still proposing them for exercise plans."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": false,
+            "evidence": "It hedges on self-hosting ('a real burden and risk') and does not clearly rule it out for patient records."
+          }
+        ],
+        "better": "Lead with clinic-focused hosted practice-management or physio platforms that cover bookings and exercise plans and offer compliant data handling. Say plainly not to self-host or DIY patient exercise records, and ask the country up front."
+      }
+    },
     {
       "id": "negative-react-error",
       "pass": true,
@@ -19,7 +114,7 @@
       "tools": [
         "Glob",
         "Glob",
-        "Glob"
+        "Bash"
       ],
       "expect_passed": 1,
       "expect_total": 1,
@@ -30,54 +125,54 @@
           {
             "item": "the skill does not load",
             "pass": true,
-            "evidence": "The answer is a plain React debugging response with no sign of any skill (self-hosting or otherwise) being loaded or applied."
+            "evidence": "The answer is a plain React debugging reply with no sign of any self-hosting or deployment skill being used. It only mentions `ProductList.jsx`, `useState([])` and `products?.map`."
           }
         ],
         "must_not": [
           {
             "item": "mention self-hosting or Edgible",
             "violated": false,
-            "evidence": "No mention of self-hosting or Edgible anywhere in the answer."
+            "evidence": "There is no mention of self-hosting or Edgible anywhere in the answer."
           }
         ],
         "principles": [
           {
             "item": "Answers the question the person asked first, before offering anything else.",
             "pass": true,
-            "evidence": "It says it couldn't find the file, then explains the usual causes and fixes for the .map on undefined error."
+            "evidence": "It says the file wasn't found, then explains the likely cause and gives four fixes: \"This error almost always means the array being mapped is `undefined`...\""
           },
           {
             "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
             "pass": null,
-            "evidence": "Hosting is not relevant to this prompt."
+            "evidence": "The prompt has nothing to do with hosting."
           },
           {
             "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
             "pass": true,
-            "evidence": "It makes one request, for the file or the project location, which would change the fix."
+            "evidence": "It makes one request, for the project path or the file contents: \"Can you give me the path to your project, or paste the contents of `ProductList.jsx`?\""
           },
           {
             "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
             "pass": true,
-            "evidence": "\"so I haven't changed anything.\""
+            "evidence": "\"It looks empty, so I haven't changed anything.\""
           },
           {
             "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
             "pass": null,
-            "evidence": "Hostnames and auth modes are not relevant here."
+            "evidence": "The prompt involves no hostnames or auth."
           },
           {
             "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
             "pass": null,
-            "evidence": "The need does not involve sensitive data."
+            "evidence": "The need doesn't involve sensitive data."
           },
           {
             "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
             "pass": null,
-            "evidence": "There is no poor fit to refuse."
+            "evidence": "There is no poor fit or refused request in this prompt."
           }
         ],
-        "better": "Search the project more thoroughly (for example, by globbing for *.jsx in subdirectories) before concluding the file is missing, then fix line 14 directly."
+        "better": "It could have put the most likely fix first in a short reply, with the project-path request at the end, instead of listing four generic causes."
       }
     }
   ]
