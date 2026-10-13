@@ -3,10 +3,20 @@
 # a pull request for a person to review; one that does not becomes an issue saying how far
 # it got. Nothing is ever merged here. See HOW-IT-WORKS.md.
 #
-# The agent is a Claude Code session with the edgible-cards skill, on the runner's Claude
-# subscription. It works in its own home folder with a short list of commands (card-kit's
-# tools and Docker image lookups): no shell beyond that, no GitHub or Edgible login. This
-# workflow, not the agent, checks the card, tests it, and opens the pull request.
+# The work is split by what each part needs (see the build fleet's design):
+#   write   the hub (label hub): the agent writes the card, and check-cards --untrusted runs
+#           in a fix loop, so problems the checker finds never reach the fleet
+#   test-1  a fleet machine (label edgible-test): checks the card again, then test-card
+#   fix     the hub, only if test-1 failed: the agent fixes the card from the test's log
+#   test-2  a fleet machine, only after a fix
+#   finish  GitHub's own runners: the pull request from the test that passed, or an issue
+# The card passes between them as workflow artifacts.
+#
+# The agent is a Claude Code session with the edgible-cards skill, on the hub's Claude
+# subscription (.github/scripts/grow-agent.sh). It works in its own home folder with a short
+# list of commands (card-kit's tools and Docker image lookups): no shell beyond that, no
+# GitHub or Edgible login. This workflow, not the agent, checks the card, tests it, and opens
+# the pull request.
 #
 # It skips the night when 3 agent-made pull requests are already waiting for review.
 
@@ -42,15 +52,17 @@ defaults:
     shell: bash
 
 jobs:
-  grow:
+  needs-map:
     # Only the nightly chain continues: a run started by hand does not set off the next job.
     # The workflow before it ran on the schedule, or was itself part of the chain and did not skip.
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.event == 'schedule' ||
       (github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.conclusion != 'skipped')
+    # The Mac, for now: this step pushes to card-kit with the machine's own GitHub sign-in,
+    # which the hub does not have.
     runs-on: [self-hosted, edgible-test]
-    timeout-minutes: 240
+    timeout-minutes: 15
     steps:
       - name: Add merged agent cards to the needs map
         # A merged agent-made card goes into its category's cards: in card-kit's needs map,
@@ -103,6 +115,20 @@ jobs:
 
           Made by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
 
+  write:
+    # Only the nightly chain continues: a run started by hand does not set off the next job.
+    # The workflow before it ran on the schedule, or was itself part of the chain and did not skip.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.event == 'schedule' ||
+      (github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.conclusion != 'skipped')
+    runs-on: [self-hosted, hub]
+    timeout-minutes: 120
+    outputs:
+      go: ${{ steps.queue.outputs.skip == 'false' && steps.pick.outputs.none == 'false' }}
+      card: ${{ steps.write.outputs.card }}
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
       - name: Check the review queue and tonight's evals
         id: queue
         env:
@@ -138,9 +164,8 @@ jobs:
           APP: ${{ inputs.app }}
         run: |
           set -euo pipefail
-          # Files from an earlier night stay in this folder unless removed, and the issue
-          # step would report an old night's error as tonight's.
-          rm -rf card-kit work agent-home pick.json agent.log check.log test.log issue.md pr.md
+          # Files from an earlier night stay in this folder unless removed.
+          rm -rf card-kit work agent-home out pick.json agent.log check.log
           git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
           # Apps proposed before, as a pull request or an issue, open or closed, are not picked again.
           proposed=$( { gh pr list --repo "$GITHUB_REPOSITORY" --label agent-card --state all --limit 500 --json title --jq '.[].title'
@@ -157,39 +182,18 @@ jobs:
           jq -r '"category: \(.category)\ncandidates: \([.candidates[].name] | join(", "))"' pick.json
           echo "none=false" >> "$GITHUB_OUTPUT"
 
-      - name: Build and test the card
+      - name: Write the card
         if: steps.queue.outputs.skip == 'false' && steps.pick.outputs.none == 'false'
-        id: build
-        env:
-          # The machine's own device (TEST_DEVICE in its runner's .env), else the repository variable.
-          REPO_DEVICE: ${{ vars.TEST_DEVICE }}
+        id: write
         run: |
           set -euo pipefail
-          DEVICE=${TEST_DEVICE:-$REPO_DEVICE}
-          [ -n "$DEVICE" ] || { echo "set TEST_DEVICE in the runner's .env, or the repository variable TEST_DEVICE" >&2; exit 2; }
-          # The agent's own home: the skill, and nothing else of this machine's.
-          mkdir -p agent-home/.claude/skills work
-          cp -R card-kit/skills/edgible-cards agent-home/.claude/skills/
-          cp -R cards work/cards
-          ln -s "$PWD/card-kit" work/card-kit
-          docker_host=$(docker context inspect --format '{{.Endpoints.docker.Host}}')
-          agent() {
-            ( cd work/cards && env -i PATH="$PATH" HOME="$PWD/../../agent-home" LANG=en_US.UTF-8 \
-                CLAUDE_CODE_OAUTH_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN" DOCKER_HOST="$docker_host" \
-                GH_TOKEN=disabled GITHUB_TOKEN=disabled GIT_CONFIG_NOSYSTEM=1 \
-                claude -p "$1" --model sonnet --max-turns 80 \
-                  --allowedTools Read Write Edit Glob Grep WebFetch Skill \
-                    "Bash(../card-kit/run:*)" "Bash(docker manifest inspect:*)" "Bash(docker buildx imagetools inspect:*)" \
-                  --disallowedTools "Bash(gh:*)" "Bash(git:*)" "Bash(curl:*)" "Bash(docker run:*)" "Bash(docker compose:*)" ) \
-              > agent.log 2>&1 || true
-            tail -c 3000 agent.log
-          }
+          mkdir -p work && cp -R cards work/cards
           picked=$(jq -c '{category, entry: (.entry // {} | {jobs, exposure, ask}), candidates}' pick.json)
-          agent "Make one new Edgible app card, following the edgible-cards skill's \"Build an app card\" section and the card-kit README. You are in a checkout of Edgible/cards; card-kit is at ../card-kit.
+          cards/.github/scripts/grow-agent.sh "Make one new Edgible app card, following the edgible-cards skill's \"Build an app card\" section and the card-kit README. You are in a checkout of Edgible/cards; card-kit is at ../card-kit.
 
           Choose ONE app from these candidates: the one that does the category's jobs best, not the most starred. Check that it has a maintained, multi-architecture (amd64 and arm64) container image with a version tag, using docker manifest inspect; skip any that does not. Candidates and the need they meet: $picked
 
-          Write the card in a new top-level directory named for the app (lowercase, hyphens), with metadata.type: app, copying the shape of the closest existing app card. Mount only named volumes or paths under ./ : nothing on the host, no Docker socket, no privileged mode or host network. Choose each hostname's auth mode by who calls it, from the cards README's table. Write README.md with ../card-kit/run card-readme (write its notes as <name>-readme.yml at the repo root, not in the card directory), and check with ../card-kit/run check-cards --untrusted --before-test <name>/card.yml until it says ok. You cannot run the card or test-card here; the next step does.
+          Write the card in a new top-level directory named for the app (lowercase, hyphens), with metadata.type: app, copying the shape of the closest existing app card. Mount only named volumes or paths under ./ : nothing on the host, no Docker socket, no privileged mode or host network. Choose each hostname's auth mode by who calls it, from the cards README's table. Write README.md with ../card-kit/run card-readme (write its notes as <name>-readme.yml at the repo root, not in the card directory), and check with ../card-kit/run check-cards --untrusted --before-test <name>/card.yml until it says ok. You cannot run the card or test-card here; a later step does.
 
           Write NEW-CARD.md at the repo root: the app's name and directory on the first line as 'card: <name>', then why you chose it over the other candidates, and each hostname's auth mode and why. Change nothing outside the new directory and NEW-CARD.md."
           # The new card is the one new top-level directory with a card.yml in it. NEW-CARD.md's
@@ -202,104 +206,199 @@ jobs:
           else
             card=$(sed -nE '1s/^card: *([A-Za-z0-9-]+).*/\1/p' work/cards/NEW-CARD.md 2>/dev/null | tr 'A-Z' 'a-z' || true)
           fi
-          [ -n "$card" ] && [ -f "work/cards/$card/card.yml" ] || {
+          # The name goes into later jobs' commands, so only a plain card name is passed on.
+          [[ "$card" =~ ^[a-z0-9-]+$ ]] && [ -f "work/cards/$card/card.yml" ] || {
             echo "the agent made no card (new directories with a card.yml: ${new:-none})" | tee check.log
-            echo "card=" >> "$GITHUB_OUTPUT"; echo "result=fail" >> "$GITHUB_OUTPUT"; exit 0; }
-          echo "card=$card" >> "$GITHUB_OUTPUT"
+            echo "card=" >> "$GITHUB_OUTPUT"; exit 0; }
           # The agent may change only its own card and NEW-CARD.md.
           extra=$(cd work/cards && git status --porcelain | grep -vE "^\?\? ($card/|NEW-CARD\.md|[a-z0-9-]+-readme\.yml)$" || true)
-          [ -z "$extra" ] || { echo "the agent changed files outside its card:"; echo "$extra"; echo "result=fail" >> "$GITHUB_OUTPUT"; exit 0; }
-          result=fail
-          for attempt in $(seq 1 "$ATTEMPTS"); do
-            echo "== attempt $attempt: check and test $card"
-            if ! (cd work/cards && ../card-kit/run check-cards --untrusted --before-test "$card/card.yml") > check.log 2>&1; then
-              cat check.log
-              log=$(cat check.log)
-            elif (cd work/cards && python3 ../card-kit/test-card.py "$card" --device "$DEVICE" --by agent) > test.log 2>&1; then
-              tail -20 test.log; result=pass; break
-            else
-              tail -40 test.log
-              log=$(tail -60 test.log)
-            fi
-            [ "$attempt" -lt "$ATTEMPTS" ] || break
-            agent "The $card card you made did not pass. Fix the card, change nothing outside $card/, check it again with ../card-kit/run check-cards --untrusted --before-test $card/card.yml, and update NEW-CARD.md if the auth modes or app changed. What failed: $log"
-          done
-          echo "result=$result" >> "$GITHUB_OUTPUT"
+          [ -z "$extra" ] || { { echo "the agent changed files outside its card:"; echo "$extra"; } | tee check.log; echo "card=" >> "$GITHUB_OUTPUT"; exit 0; }
+          echo "card=$card" >> "$GITHUB_OUTPUT"
 
-      - name: Open the pull request
-        if: steps.build.outputs.result == 'pass'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CARD: ${{ steps.build.outputs.card }}
+      - name: Check the card, and have the agent fix what the checker finds
+        if: steps.write.outputs.card != ''
+        id: check
+        run: cards/.github/scripts/grow-check.sh "${{ steps.write.outputs.card }}" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Keep the card and the notes for the next jobs
+        if: always() && steps.queue.outputs.skip == 'false' && steps.pick.outputs.none == 'false'
         run: |
           set -euo pipefail
-          cd work/cards
-          (../card-kit/run card-image "$CARD" || true) >/dev/null 2>&1
-          ../card-kit/run check-cards --fresh --untrusted "$CARD/card.yml"
-          branch="agent/$CARD"
-          git checkout -q -b "$branch"
-          git add "$CARD"
-          git -c user.name="cards grow" -c user.email="actions@github.com" commit -q -m "New app card: $CARD
-
-          Made by an agent with the edgible-cards skill and tested with test-card on a serving
-          device, by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
-          git push -q "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY.git" "HEAD:$branch"
-          gh label create agent-card --repo "$GITHUB_REPOSITORY" --color 5319E7 --description "Made by the nightly grow job" 2>/dev/null || true
-          {
-            echo "## What"
-            echo
-            echo "A new app card, \`$CARD\`, made by the nightly grow job for the first gap in the needs map. **An AI agent made this pull request.** Review it with the checklist below before merging."
-            echo
-            echo "Category: $(jq -r '.category // "asked for by hand"' ../../pick.json)"
-            echo
-            tail -n +2 NEW-CARD.md
-            echo
-            echo "## Test"
-            echo
-            echo '```'
-            sed -n '/^result:/,$p' ../../test.log | head -20 | sed -e "s#$HOME#~#g"
-            echo '```'
-            echo
-            echo "## Review"
-            echo
-            echo "- [ ] Default passwords are changed or generated, and the README says how to sign in the first time."
-            echo "- [ ] Every secret is empty in git, with a \`# Generate with:\` comment."
-            echo "- [ ] The auth mode of each hostname suits its callers, by the README's table."
-            echo "- [ ] The README says where the data lives, and Tear down backs it up before deleting it."
-            echo "- [ ] The app is a sensible choice for its category, and its image is from its own project."
-            echo "- [ ] Nothing names a device, a hostname, or an organization."
-            echo "- [x] \`test.yml\` passes and \`check-cards --fresh --untrusted\` passes (checked by the workflow)."
-            echo
-            echo "After this is merged, the grow job adds \`$CARD\` to its category in card-kit's needs map. Made by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
-          } > ../../pr.md
-          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
-            --title "New app card: $CARD" --label agent-card --body-file ../../pr.md
-
-      - name: Open an issue instead
-        if: steps.build.outputs.result == 'fail'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CARD: ${{ steps.build.outputs.card }}
-        run: |
-          set -euo pipefail
-          gh label create agent-card --repo "$GITHUB_REPOSITORY" --color 5319E7 --description "Made by the nightly grow job" 2>/dev/null || true
-          name=${CARD:-$(jq -r '.candidates[0].name' pick.json)}
-          {
-            echo "The nightly grow job tried to make an app card for **$name** (category: $(jq -r '.category // "asked for by hand"' pick.json)) and could not make one that passes."
-            echo
-            echo "Offered: $(jq -r '[.candidates[].name] | join(", ")' pick.json)."
-            echo
-            [ -f work/cards/NEW-CARD.md ] && { echo "## The agent's notes"; echo; tail -n +2 work/cards/NEW-CARD.md; echo; }
-            echo "## Where it stopped"
-            echo
-            echo '```'
-            { [ -f test.log ] && tail -40 test.log; [ -f check.log ] && cat check.log; [ -f test.log ] || [ -f check.log ] || tail -c 2000 agent.log; } | sed -e "s#$HOME#~#g"
-            echo '```'
-            echo
-            echo "A person can pick this up, or close it. It will not be picked again. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          } > issue.md
-          gh issue create --repo "$GITHUB_REPOSITORY" --title "App request: $name" --label app-request --label agent-card --body-file issue.md
+          mkdir -p out
+          card='${{ steps.write.outputs.card }}'
+          [ -n "$card" ] && cp -R "work/cards/$card" out/ || true
+          cp work/cards/NEW-CARD.md out/ 2>/dev/null || true
+          cp pick.json out/; cp agent.log check.log out/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.queue.outputs.skip == 'false' && steps.pick.outputs.none == 'false'
+        with:
+          name: grow-written
+          path: out/
+          if-no-files-found: ignore
 
       - name: Clean up
         if: always()
-        run: rm -rf work agent-home card-kit agent.log check.log test.log
+        run: rm -rf work agent-home card-kit out agent.log check.log pick.json
+
+  test-1:
+    needs: write
+    if: needs.write.outputs.ready == 'true'
+    uses: ./.github/workflows/grow-test.yml
+    with:
+      card: ${{ needs.write.outputs.card }}
+      from: grow-written
+      to: grow-tested-1
+
+  fix:
+    needs: [write, test-1]
+    if: always() && needs.test-1.result == 'success' && needs.test-1.outputs.result == 'fail'
+    runs-on: [self-hosted, hub]
+    timeout-minutes: 120
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cards
+      - uses: actions/download-artifact@v4
+        with:
+          name: grow-tested-1
+          path: tested
+      - name: Fix the card from the test's log
+        env:
+          CARD: ${{ needs.write.outputs.card }}
+        run: |
+          set -euo pipefail
+          rm -rf card-kit work agent-home out agent.log check.log
+          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          mkdir -p work && cp -R cards work/cards
+          cp -R "tested/$CARD" "work/cards/$CARD"
+          cp tested/NEW-CARD.md work/cards/ 2>/dev/null || true
+          # test-card wrote test.yml for the failed run; the fixed card is tested afresh.
+          rm -f "work/cards/$CARD/test.yml"
+          cards/.github/scripts/grow-agent.sh "The $CARD card you made did not pass its test on a real serving device. Fix the card, change nothing outside $CARD/, check it again with ../card-kit/run check-cards --untrusted --before-test $CARD/card.yml, and update NEW-CARD.md if the auth modes or app changed. The end of the test's log: $(tail -60 tested/test.log)"
+      - name: Check the card, and have the agent fix what the checker finds
+        id: check
+        run: cards/.github/scripts/grow-check.sh "${{ needs.write.outputs.card }}" | tee -a "$GITHUB_OUTPUT"
+      - name: Keep the fixed card
+        if: always()
+        env:
+          CARD: ${{ needs.write.outputs.card }}
+        run: |
+          mkdir -p out
+          cp -R "work/cards/$CARD" out/ 2>/dev/null || true
+          cp work/cards/NEW-CARD.md out/ 2>/dev/null || true
+          cp agent.log check.log out/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grow-fixed
+          path: out/
+          if-no-files-found: ignore
+      - name: Clean up
+        if: always()
+        run: rm -rf work agent-home card-kit out tested agent.log check.log
+
+  test-2:
+    needs: [write, fix]
+    if: always() && needs.fix.result == 'success' && needs.fix.outputs.ready == 'true'
+    uses: ./.github/workflows/grow-test.yml
+    with:
+      card: ${{ needs.write.outputs.card }}
+      from: grow-fixed
+      to: grow-tested-2
+
+  finish:
+    needs: [write, test-1, fix, test-2]
+    if: always() && needs.write.result == 'success' && needs.write.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cards
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: grow-*
+          path: stages
+      - name: Open the pull request, or an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CARD: ${{ needs.write.outputs.card }}
+          TEST1: ${{ needs.test-1.outputs.result }}
+          TEST2: ${{ needs.test-2.outputs.result }}
+        run: |
+          set -euo pipefail
+          gh label create agent-card --repo "$GITHUB_REPOSITORY" --color 5319E7 --description "Made by the nightly grow job" 2>/dev/null || true
+          pick=stages/grow-written/pick.json
+          # The newest stage that holds each thing: the card that passed, its notes, the last logs.
+          if [ "$TEST2" = pass ]; then passed=stages/grow-tested-2; elif [ "$TEST1" = pass ]; then passed=stages/grow-tested-1; else passed=; fi
+          # In the order the stages ran, newest first (not ls, which sorts by name).
+          last=; notes=
+          for stage in grow-tested-2 grow-fixed grow-tested-1 grow-written; do
+            [ -z "$last" ] && [ -d "stages/$stage" ] && last=stages/$stage
+            [ -z "$notes" ] && [ -f "stages/$stage/NEW-CARD.md" ] && notes=stages/$stage/NEW-CARD.md
+          done
+          category=$(jq -r '.category // "asked for by hand"' "$pick")
+          if [ -n "$passed" ]; then
+            rm -rf card-kit && git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+            cp -R "$passed/$CARD" "cards/$CARD"
+            cd cards
+            (../card-kit/run card-image "$CARD" || true) >/dev/null 2>&1
+            ../card-kit/run check-cards --fresh --untrusted "$CARD/card.yml"
+            branch="agent/$CARD"
+            git checkout -q -b "$branch"
+            git add "$CARD"
+            git -c user.name="cards grow" -c user.email="actions@github.com" commit -q -m "New app card: $CARD
+
+          Made by an agent with the edgible-cards skill and tested with test-card on a serving
+          device, by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
+            git push -q "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY.git" "HEAD:$branch"
+            {
+              echo "## What"
+              echo
+              echo "A new app card, \`$CARD\`, made by the nightly grow job for the first gap in the needs map. **An AI agent made this pull request.** Review it with the checklist below before merging."
+              echo
+              echo "Category: $category"
+              echo
+              [ -n "$notes" ] && tail -n +2 "../$notes"
+              echo
+              echo "## Test"
+              echo
+              echo '```'
+              sed -n '/^result:/,$p' "../$passed/test.log" | head -20
+              echo '```'
+              echo
+              echo "## Review"
+              echo
+              echo "- [ ] Default passwords are changed or generated, and the README says how to sign in the first time."
+              echo "- [ ] Every secret is empty in git, with a \`# Generate with:\` comment."
+              echo "- [ ] The auth mode of each hostname suits its callers, by the README's table."
+              echo "- [ ] The README says where the data lives, and Tear down backs it up before deleting it."
+              echo "- [ ] The app is a sensible choice for its category, and its image is from its own project."
+              echo "- [ ] Nothing names a device, a hostname, or an organization."
+              echo "- [x] \`test.yml\` passes and \`check-cards --fresh --untrusted\` passes (checked by the workflow)."
+              echo
+              echo "After this is merged, the grow job adds \`$CARD\` to its category in card-kit's needs map. Made by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
+            } > ../pr.md
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+              --title "New app card: $CARD" --label agent-card --body-file ../pr.md
+          else
+            name=${CARD:-$(jq -r '.candidates[0].name' "$pick")}
+            {
+              echo "The nightly grow job tried to make an app card for **$name** (category: $category) and could not make one that passes."
+              echo
+              echo "Offered: $(jq -r '[.candidates[].name] | join(", ")' "$pick")."
+              echo
+              [ -n "$notes" ] && { echo "## The agent's notes"; echo; tail -n +2 "$notes"; echo; }
+              echo "## Where it stopped"
+              echo
+              echo '```'
+              if [ -f "$last/test.log" ]; then tail -40 "$last/test.log"
+              elif [ -f "$last/check.log" ]; then cat "$last/check.log"
+              else tail -c 2000 "$last/agent.log" 2>/dev/null || echo "no log"; fi
+              echo '```'
+              echo
+              echo "A person can pick this up, or close it. It will not be picked again. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            } > issue.md
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "App request: $name" --label app-request --label agent-card --body-file issue.md
+          fi
