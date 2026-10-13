@@ -11,6 +11,10 @@ on:
         description: The label that picks the machine, such as "edgible-test", "hub" or "Linux"
         type: string
         default: edgible-test
+      card:
+        description: Optionally, a card to test there with test-card, such as "umami". Its result is kept as a download, never in status.json or a badge
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -64,3 +68,26 @@ jobs:
               sys.exit(f'need exactly one device named {name}, found {len(mine)}')
           print(f'{name}:', mine[0].get('status'))
           " "$device"
+      - name: test one card
+        if: inputs.card != ''
+        env:
+          CARD: ${{ inputs.card }}
+        run: |
+          set -euo pipefail
+          [[ "$CARD" =~ ^[a-z0-9-]+$ ]] || { echo "not a card name: $CARD" >&2; exit 2; }
+          device=${TEST_DEVICE:-$REPO_DEVICE}
+          rm -rf cards card-kit tested && mkdir tested
+          git clone -q --depth 1 "https://github.com/$GITHUB_REPOSITORY.git" cards
+          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          cd cards
+          python3 ../card-kit/test-card.py "$CARD" --device "$device" --by ci > ../tested/test.log 2>&1 && rc=0 || rc=$?
+          sed -i.bak -e "s#$HOME#~#g" ../tested/test.log && rm -f ../tested/test.log.bak
+          tail -25 ../tested/test.log
+          cp "$CARD/test.yml" ../tested/ 2>/dev/null || true
+          exit $rc
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.card != ''
+        with:
+          name: test-${{ inputs.card }}-${{ runner.name }}
+          path: tested/
+          if-no-files-found: ignore
