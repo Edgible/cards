@@ -1,8 +1,8 @@
-tested: 2026-10-13
+tested: 2026-10-14
 result: pass
-card-kit: "85b3c40"
+card-kit: "abca913"
 edgible-cli: 1.4.6
-files: sha256:c281c794431e0ded
+files: sha256:efb913a13b892936
 machine: darwin/arm64, docker 29.4.3
 images:
   - caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
@@ -18,8 +18,8 @@ steps:
   teardown: pass
 measured:
   static-site:
-    memory: 17 MB
+    memory: 19 MB
     images: 35 MB
-    data: 885 KB
+    data: 909 KB
 duration: 3m
 by: agent
