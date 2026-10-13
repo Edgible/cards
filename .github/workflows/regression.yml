@@ -1,19 +1,21 @@
-# The regression: retest the cards on a real Edgible serving device. See HOW-IT-WORKS.md.
+# The regression: retest the cards on real Edgible serving devices. See HOW-IT-WORKS.md.
 #
-# card-kit's test-cards.py tests every card that carries test.yml (every app card, and each
-# pattern with a test). With --spread 7, a new or changed card is tested at once; a new
-# `edgible --version`, or a week without a test, waits for the card's turn in the week. The status lives on the
-# test-status branch, which the README's badges read, so each run starts from what the last
-# one learned.
+# Three jobs. plan, on GitHub's own runner, asks card-kit's test-cards.py which cards are due
+# tonight and which runner labels each needs, from its places:. With --spread 7, a new or
+# changed card is tested at once; a new `edgible --version`, or a week without a test, waits
+# for the card's turn in the week. test is one job per card (cards that publish the same app
+# name share one), which GitHub hands to a fleet machine with those labels, so cards run in
+# parallel on the machines that fit them. collect merges the results into the status on the
+# test-status branch, which the README's badges read, and opens or closes failure issues.
 #
-# It runs on a self-hosted runner that can publish apps, so it never runs on a pull request:
-# only in the nightly chain, after grow, or by hand from the Actions tab ("force" retests every card, "only"
-# names some).
+# The fleet machines can publish apps, so this never runs on a pull request: only in the
+# nightly chain, after grow, or by hand from the Actions tab ("force" retests every card,
+# "only" names some).
 
 name: regression
 
 on:
-  # Each night, when grow ends, so a night's jobs never overlap on the runner.
+  # Each night, when grow ends, so a night's jobs never overlap on the runners.
   workflow_run:
     workflows: [grow]
     types: [completed]
@@ -44,17 +46,18 @@ defaults:
     shell: bash
 
 jobs:
-  regression:
+  plan:
     # Only the nightly chain continues: a run started by hand does not set off the next job.
     # The workflow before it ran on the schedule, or was itself part of the chain and did not skip.
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.event == 'schedule' ||
       (github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.conclusion != 'skipped')
-    # The runner's machine has Docker, the edgible CLI signed in, and is a serving device.
-    # test-card checks that machine's own ports and Docker, so it cannot run in a container.
-    runs-on: [self-hosted, edgible-test]
-    timeout-minutes: 240
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      jobs: ${{ steps.plan.outputs.jobs }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,22 +66,77 @@ jobs:
       - name: Fetch card-kit and the last status
         run: |
           set -euo pipefail
-          rm -rf card-kit status
           git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/Edgible/card-kit.git card-kit
+          mkdir status
           if git -C cards ls-remote --exit-code --heads origin test-status >/dev/null; then
             git -C cards fetch -q --depth 1 origin test-status
-            git -C cards worktree add -q ../status FETCH_HEAD
-          else
-            mkdir status
+            git -C cards show FETCH_HEAD:status.json > status/status.json 2>/dev/null || rm -f status/status.json
           fi
+          echo "cards $(git -C cards rev-parse --short HEAD), card-kit $(git -C card-kit rev-parse --short HEAD)"
+
+      - name: List the fleet machines online
+        env:
+          # A token that can read the repo's runners (fine-grained: Administration, read). Without
+          # it the plan cannot tell which machines are online, so it plans every card due, and a
+          # card no machine can run waits in the queue.
+          GH_TOKEN: ${{ secrets.FLEET_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then echo "no FLEET_TOKEN secret: planning without knowing the machines"; exit 0; fi
+          gh api "repos/$GITHUB_REPOSITORY/actions/runners" --paginate \
+            --jq '.runners[] | select(.status == "online") | [.labels[].name]' | jq -s . > machines.json
+          jq -r '.[] | join(",")' machines.json
+
+      - name: Plan tonight's cards
+        id: plan
+        env:
+          FORCE: ${{ inputs.force }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          set -euo pipefail
+          # --spread 7: a new or changed card is tested tonight; every other test waits for the
+          # card's turn in the week, so a night tests about a seventh of the cards.
+          args=(--status ../status --spread 7 --plan ../plan.json)
+          [ -f machines.json ] && args+=(--machines ../machines.json)
+          if [ "$FORCE" = "true" ]; then args+=(--all); fi
+          if [ -n "$ONLY" ]; then
+            if ! [[ "$ONLY" =~ ^[a-z0-9\ -]+$ ]]; then echo "only: card names, separated by spaces" >&2; exit 2; fi
+            read -ra names <<< "$ONLY"
+            args+=(--only "${names[@]}")
+          fi
+          (cd cards && python3 ../card-kit/test-cards.py "${args[@]}")
+          echo "matrix=$(cat plan.json)" >> "$GITHUB_OUTPUT"
+          echo "jobs=$(jq '.include | length' plan.json)" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: plan
+    if: needs.plan.outputs.jobs != '0'
+    name: ${{ matrix.cards }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    # A fleet machine with the labels the card needs: Docker, the edgible CLI signed in, and a
+    # serving device. test-card checks that machine's own ports and Docker, so it cannot run in
+    # a container.
+    runs-on: ${{ matrix.labels }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cards
+
+      - name: Fetch card-kit
+        run: |
+          set -euo pipefail
+          rm -rf card-kit result
+          git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/Edgible/card-kit.git card-kit
           echo "cards $(git -C cards rev-parse --short HEAD)," \
                "card-kit $(git -C card-kit rev-parse --short HEAD)," \
                "edgible $(edgible --version)"
 
-      - name: Test the cards that need it
+      - name: Test ${{ matrix.cards }}
         env:
-          FORCE: ${{ inputs.force }}
-          ONLY: ${{ inputs.only }}
+          CARDS: ${{ matrix.cards }}
           # The serving device the tests publish on, as `edgible device list` names it: the
           # machine's own, from TEST_DEVICE in its runner's .env, so each machine in a fleet
           # tests on itself; else the repository variable. No device name is in this file.
@@ -88,18 +146,61 @@ jobs:
           DEVICE=${TEST_DEVICE:-$FALLBACK_DEVICE}
           if [ -n "${TEST_DEVICE:-}" ]; then echo "testing on $DEVICE (from this machine's runner .env)"; else echo "testing on $DEVICE (the repository's fallback; this machine sets no TEST_DEVICE)"; fi
           [ -n "$DEVICE" ] || { echo "set TEST_DEVICE in the runner's .env, or the repository variable TEST_DEVICE" >&2; exit 2; }
-          # --spread 7: a new or changed card is tested tonight; every other test waits for the
-          # card's turn in the week, so a night tests about a seventh of the cards.
-          args=(--device "$DEVICE" --status ../status --by ci --spread 7)
-          if [ "$FORCE" = "true" ]; then args+=(--all); fi
-          if [ -n "$ONLY" ]; then
-            if ! [[ "$ONLY" =~ ^[a-z0-9\ -]+$ ]]; then echo "only: card names, separated by spaces" >&2; exit 2; fi
-            read -ra names <<< "$ONLY"
-            args+=(--only "${names[@]}")
+          read -ra names <<< "$CARDS"
+          cd cards
+          python3 ../card-kit/test-cards.py --device "$DEVICE" --status ../result --by ci --only "${names[@]}"
+
+      - name: Keep the result for collect
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ strategy.job-index }}
+          path: result/status.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Clean up
+        if: always()
+        run: rm -rf result
+
+  collect:
+    needs: [plan, test]
+    # After every test job, whether it passed or failed; not when there was nothing to plan.
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cards
+
+      - name: Fetch card-kit and the last status
+        run: |
+          set -euo pipefail
+          git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/Edgible/card-kit.git card-kit
+          if git -C cards ls-remote --exit-code --heads origin test-status >/dev/null; then
+            git -C cards fetch -q --depth 1 origin test-status
+            git -C cards worktree add -q ../status FETCH_HEAD
+          else
+            mkdir status
           fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: result-*
+          path: results
+
+      - name: Merge the results
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          # One directory per test job; none when nothing was due, and the merge still drops
+          # the status of a card that is gone.
+          dirs=(results/*/)
+          [ ${#dirs[@]} -gt 0 ] || { mkdir -p results; dirs=(results); }
           cd cards
           # Keep going on a failure, so the next steps still save what this run learned.
-          python3 ../card-kit/test-cards.py "${args[@]}" && rc=0 || rc=$?
+          python3 ../card-kit/test-cards.py --status ../status --merge "${dirs[@]/#/../}" && rc=0 || rc=$?
           echo "$rc" > ../result
 
       - name: Save the status
@@ -152,7 +253,7 @@ jobs:
       - name: Fail when a card failed
         run: |
           rc=$(cat result 2>/dev/null || echo 2)
-          [ "$rc" = 0 ] || { echo "test-cards exited $rc; see the test step for which card failed"; exit 1; }
+          [ "$rc" = 0 ] || { echo "test-cards exited $rc; see the test jobs for which card failed"; exit 1; }
 
       - name: Clean up
         if: always()
