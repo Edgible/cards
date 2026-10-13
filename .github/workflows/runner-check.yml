@@ -32,7 +32,7 @@ jobs:
             echo "cpus: $(nproc)"
           fi
           echo "disk free: $(df -h "$GITHUB_WORKSPACE" | awk 'NR==2 {print $4}')"
-          for tool in git gh jq python3 node docker edgible claude nvidia-smi; do
+          for tool in git gh jq python3 node docker edgible claude edgible-mcp nvidia-smi; do
             if command -v "$tool" >/dev/null; then echo "$tool: yes"; else echo "$tool: no"; fi
           done
       - name: claude

@@ -36,9 +36,9 @@ jobs:
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.event == 'schedule' ||
       (github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.conclusion != 'skipped')
-    # The runner's Mac, for the summary on its Claude subscription. If the Mac is off, the
-    # watchdog workflow reports that instead.
-    runs-on: [self-hosted, edgible-test]
+    # The hub, for the summary on its Claude subscription. If the hub is down, the watchdog
+    # workflow reports that instead.
+    runs-on: [self-hosted, hub]
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4

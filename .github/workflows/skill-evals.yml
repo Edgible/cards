@@ -38,9 +38,10 @@ defaults:
 
 jobs:
   evals:
-    # The runner's machine has the claude CLI signed in to a subscription, and the
-    # edgible-mcp server, whose find and describe tools the answering sessions may use.
-    runs-on: [self-hosted, edgible-test]
+    # The hub: a small always-on machine with the claude CLI signed in to a subscription,
+    # and the edgible-mcp server, whose find and describe tools the answering sessions may
+    # use. It runs no card tests, so the evals never compete with them.
+    runs-on: [self-hosted, hub]
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
