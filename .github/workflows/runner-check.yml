@@ -1,20 +1,66 @@
 name: runner-check
 
-# Proves the self-hosted test runner can reach Docker and Edgible.
-# By hand only: a self-hosted runner never runs a pull request.
+# Proves a self-hosted machine is ready: who it is, what it has, and that each tool it should
+# have works. Run it by hand after a machine joins, choosing the machine by one label: a
+# fleet machine (edgible-test) is checked for Docker and Edgible, the hub (hub) for a working
+# Claude sign-in. By hand only: a self-hosted runner never runs a pull request.
 on:
   workflow_dispatch:
+    inputs:
+      label:
+        description: The label that picks the machine, such as "edgible-test", "hub" or "Linux"
+        type: string
+        default: edgible-test
 
 permissions:
   contents: read
 
 jobs:
   runner:
-    runs-on: [self-hosted, edgible-test]
+    runs-on: ${{ fromJSON(format('["self-hosted","{0}"]', inputs.label)) }}
+    timeout-minutes: 15
+    env:
+      REPO_DEVICE: ${{ vars.TEST_DEVICE }}
     steps:
+      - name: machine
+        run: |
+          echo "runner: $RUNNER_NAME ($RUNNER_OS, $RUNNER_ARCH)"
+          if [ "$RUNNER_OS" = macOS ]; then
+            echo "memory: $(( $(sysctl -n hw.memsize) / 1073741824 )) GB, cpus: $(sysctl -n hw.ncpu)"
+          else
+            free -h | awk '/^Mem:/ {print "memory: " $2 " total, " $7 " available"} /^Swap:/ {print "swap: " $2}'
+            echo "cpus: $(nproc)"
+          fi
+          echo "disk free: $(df -h "$GITHUB_WORKSPACE" | awk 'NR==2 {print $4}')"
+          for tool in git gh jq python3 node docker edgible claude nvidia-smi; do
+            if command -v "$tool" >/dev/null; then echo "$tool: yes"; else echo "$tool: no"; fi
+          done
+      - name: claude
+        # One short session, so the token in the runner's .env is proven, not just present.
+        run: |
+          if ! command -v claude >/dev/null; then echo "no claude CLI on this machine"; exit 0; fi
+          claude --version
+          [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || { echo "CLAUDE_CODE_OAUTH_TOKEN is not set in the runner's .env" >&2; exit 1; }
+          reply=$(cd "$RUNNER_TEMP" && claude -p "Reply with the single word ready." --max-turns 1 2>&1) || { echo "$reply" >&2; exit 1; }
+          echo "claude answered: $reply"
       - name: docker
-        run: docker version --format 'docker {{.Server.Version}}'
+        run: |
+          if ! command -v docker >/dev/null; then echo "no Docker on this machine"; exit 0; fi
+          docker version --format 'docker {{.Server.Version}}'
       - name: edgible
         run: |
+          if ! command -v edgible >/dev/null; then echo "no Edgible CLI on this machine"; exit 0; fi
           edgible --version
-          edgible device list --json | python3 -c "import json,sys; print(len(json.load(sys.stdin)), 'devices visible')"
+          if [ -n "${TEST_DEVICE:-}" ]; then echo "device: $TEST_DEVICE (from the runner's .env)"
+          else echo "device: ${REPO_DEVICE:-none} (from the repository variable)"; fi
+          device=${TEST_DEVICE:-$REPO_DEVICE}
+          edgible device list --json | python3 -c "
+          import json, sys
+          devices = json.load(sys.stdin)
+          name = sys.argv[1]
+          print(len(devices), 'devices visible')
+          mine = [d for d in devices if d.get('name') == name]
+          if len(mine) != 1:
+              sys.exit(f'need exactly one device named {name}, found {len(mine)}')
+          print(f'{name}:', mine[0].get('status'))
+          " "$device"

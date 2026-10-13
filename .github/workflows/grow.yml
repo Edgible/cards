@@ -161,10 +161,12 @@ jobs:
         if: steps.queue.outputs.skip == 'false' && steps.pick.outputs.none == 'false'
         id: build
         env:
-          DEVICE: ${{ vars.TEST_DEVICE }}
+          # The machine's own device (TEST_DEVICE in its runner's .env), else the repository variable.
+          REPO_DEVICE: ${{ vars.TEST_DEVICE }}
         run: |
           set -euo pipefail
-          [ -n "$DEVICE" ] || { echo "set the repository variable TEST_DEVICE" >&2; exit 2; }
+          DEVICE=${TEST_DEVICE:-$REPO_DEVICE}
+          [ -n "$DEVICE" ] || { echo "set TEST_DEVICE in the runner's .env, or the repository variable TEST_DEVICE" >&2; exit 2; }
           # The agent's own home: the skill, and nothing else of this machine's.
           mkdir -p agent-home/.claude/skills work
           cp -R card-kit/skills/edgible-cards agent-home/.claude/skills/
