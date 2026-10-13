@@ -1,6 +1,6 @@
 # Contributing a card
 
-There are three ways to help: add a card, fix one, or ask for one. Each follows the format in [README.md](README.md#what-a-card-is) and in [Edgible/card-kit](https://github.com/Edgible/card-kit). What is written there wins over anything here.
+There are three ways to help: add a card, fix one, or ask for one. Each follows the format in [README.md](README.md#what-a-card-is) and in [edgible-org/card-kit](https://github.com/edgible-org/card-kit). What is written there wins over anything here.
 
 ## Ask for a card
 
@@ -18,7 +18,7 @@ You need Docker. To test a card, which every app card must be, you also need an 
 1. **Check the app and the name.** An app card's app must not be on the README's [What is not an app card](README.md#what-is-not-an-app-card) list. A 404 from this command means the name is free:
 
    ```bash
-   gh api repos/Edgible/cards/contents/<name> --jq .name
+   gh api repos/edgible-org/cards/contents/<name> --jq .name
    ```
 
    If the name is taken, edit the card that is already there, or pick a name that says how yours differs, such as `n8n-sqlite`.
@@ -26,12 +26,12 @@ You need Docker. To test a card, which every app card must be, you also need an 
 2. **Fork and clone,** with card-kit beside it. Work on a branch, never on `main`:
 
    ```bash
-   gh repo fork Edgible/cards --clone
-   git clone https://github.com/Edgible/card-kit
+   gh repo fork edgible-org/cards --clone
+   git clone https://github.com/edgible-org/card-kit
    cd cards && git checkout -b <name>
    ```
 
-3. **Write the card.** Copy the card closest to yours and change the names, so every card reads the same way. Set `metadata.type` to `app` or `pattern`. The rules are in the README's [What a card is](README.md#what-a-card-is) and card-kit's [Conventions](https://github.com/Edgible/card-kit#conventions). A pattern starts from the app cards of its apps. Write the README with `card-readme`:
+3. **Write the card.** Copy the card closest to yours and change the names, so every card reads the same way. Set `metadata.type` to `app` or `pattern`. The rules are in the README's [What a card is](README.md#what-a-card-is) and card-kit's [Conventions](https://github.com/edgible-org/card-kit#conventions). A pattern starts from the app cards of its apps. Write the README with `card-readme`:
 
    ```bash
    ../card-kit/run card-readme <name> <name>-readme.yml
@@ -62,7 +62,7 @@ A maintainer reviews the checklist, the parts a test cannot judge, and runs `tes
 
 ## Made with an AI agent
 
-That is welcome. The [edgible-cards skill](https://github.com/Edgible/card-kit/tree/main/skills/edgible-cards) follows this file. Say in the pull request that an agent made it. You are still the one asking for the merge, so read what it wrote.
+That is welcome. The [edgible-cards skill](https://github.com/edgible-org/card-kit/tree/main/skills/edgible-cards) follows this file. Say in the pull request that an agent made it. You are still the one asking for the merge, so read what it wrote.
 
 ## Licence
 

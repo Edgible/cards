@@ -79,7 +79,7 @@ jobs:
           if [ -n "${TEST_DEVICE:-}" ]; then echo "testing on $device (from this machine's runner .env)"; else echo "testing on $device (the repository's fallback; this machine sets no TEST_DEVICE)"; fi
           rm -rf cards card-kit tested && mkdir tested
           git clone -q --depth 1 "https://github.com/$GITHUB_REPOSITORY.git" cards
-          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          git clone -q --depth 1 https://github.com/edgible-org/card-kit.git card-kit
           cd cards
           python3 ../card-kit/test-card.py "$CARD" --device "$device" --by ci > ../tested/test.log 2>&1 && rc=0 || rc=$?
           sed -i.bak -e "s#$HOME#~#g" ../tested/test.log && rm -f ../tested/test.log.bak

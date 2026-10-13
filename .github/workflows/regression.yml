@@ -66,7 +66,7 @@ jobs:
       - name: Fetch card-kit and the last status
         run: |
           set -euo pipefail
-          git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/Edgible/card-kit.git card-kit
+          git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/edgible-org/card-kit.git card-kit
           mkdir status
           if git -C cards ls-remote --exit-code --heads origin test-status >/dev/null; then
             git -C cards fetch -q --depth 1 origin test-status
@@ -129,7 +129,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf card-kit result
-          git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/Edgible/card-kit.git card-kit
+          git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/edgible-org/card-kit.git card-kit
           echo "cards $(git -C cards rev-parse --short HEAD)," \
                "card-kit $(git -C card-kit rev-parse --short HEAD)," \
                "edgible $(edgible --version)"
@@ -177,7 +177,7 @@ jobs:
       - name: Fetch card-kit and the last status
         run: |
           set -euo pipefail
-          git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/Edgible/card-kit.git card-kit
+          git clone -q --depth 1 --branch "$CARD_KIT_REF" https://github.com/edgible-org/card-kit.git card-kit
           if git -C cards ls-remote --exit-code --heads origin test-status >/dev/null; then
             git -C cards fetch -q --depth 1 origin test-status
             git -C cards worktree add -q ../status FETCH_HEAD

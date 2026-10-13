@@ -58,7 +58,7 @@ jobs:
           [ -n "$DEVICE" ] || { echo "set TEST_DEVICE in the runner's .env, or the repository variable TEST_DEVICE" >&2; exit 2; }
           [[ "$CARD" =~ ^[a-z0-9-]+$ ]] || { echo "not a card name: $CARD" >&2; exit 2; }
           rm -rf card-kit out test.log check.log
-          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          git clone -q --depth 1 https://github.com/edgible-org/card-kit.git card-kit
           cp -R "incoming/$CARD" "cards/$CARD"
           cd cards
           if ! ../card-kit/run check-cards --untrusted --before-test "$CARD/card.yml" > ../check.log 2>&1; then

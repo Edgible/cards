@@ -20,7 +20,7 @@ Five steps. Edit [card.env](card.env) before you start.
 
 ```bash
 mkdir -p linkding
-curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
+curl -fsSL https://github.com/edgible-org/cards/archive/refs/heads/main.tar.gz \
   | tar -xz --strip-components=2 -C linkding cards-main/linkding
 ```
 
@@ -35,7 +35,7 @@ nano linkding/card.env
 ### 3. Check
 
 ```bash
-curl -fsSLo check-env.py https://raw.githubusercontent.com/Edgible/card-kit/main/check-env.py
+curl -fsSLo check-env.py https://raw.githubusercontent.com/edgible-org/card-kit/main/check-env.py
 python3 check-env.py linkding
 ```
 
