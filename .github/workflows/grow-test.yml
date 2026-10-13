@@ -1,0 +1,90 @@
+# One test of an agent-made card on a fleet machine, for the grow job (grow.yml calls it as
+# test-1 and test-2). The fleet does not take the hub's word for the card: it checks it again
+# with check-cards --untrusted --before-test before test-card runs it. The tested card, its
+# test.yml and the logs go on as the artifact named by `to`.
+
+name: grow-test
+
+on:
+  workflow_call:
+    inputs:
+      card:
+        type: string
+        required: true
+      from:
+        description: The artifact holding the card to test
+        type: string
+        required: true
+      to:
+        description: The artifact to keep the tested card and its logs in
+        type: string
+        required: true
+    outputs:
+      result:
+        description: pass or fail
+        value: ${{ jobs.test.outputs.result }}
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: [self-hosted, edgible-test]
+    timeout-minutes: 120
+    outputs:
+      result: ${{ steps.test.outputs.result }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cards
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.from }}
+          path: incoming
+      - name: Check and test the card
+        id: test
+        env:
+          CARD: ${{ inputs.card }}
+          # The machine's own device (TEST_DEVICE in its runner's .env), else the repository variable.
+          REPO_DEVICE: ${{ vars.TEST_DEVICE }}
+        run: |
+          set -euo pipefail
+          DEVICE=${TEST_DEVICE:-$REPO_DEVICE}
+          [ -n "$DEVICE" ] || { echo "set TEST_DEVICE in the runner's .env, or the repository variable TEST_DEVICE" >&2; exit 2; }
+          [[ "$CARD" =~ ^[a-z0-9-]+$ ]] || { echo "not a card name: $CARD" >&2; exit 2; }
+          rm -rf card-kit out test.log check.log
+          git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
+          cp -R "incoming/$CARD" "cards/$CARD"
+          cd cards
+          if ! ../card-kit/run check-cards --untrusted --before-test "$CARD/card.yml" > ../check.log 2>&1; then
+            cat ../check.log; result=fail
+          elif python3 ../card-kit/test-card.py "$CARD" --device "$DEVICE" --by agent > ../test.log 2>&1; then
+            tail -20 ../test.log; result=pass
+          else
+            tail -40 ../test.log; result=fail
+          fi
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+      - name: Keep the tested card and the logs
+        if: always()
+        env:
+          CARD: ${{ inputs.card }}
+        run: |
+          mkdir -p out
+          cp -R "cards/$CARD" out/ 2>/dev/null || true
+          cp incoming/NEW-CARD.md out/ 2>/dev/null || true
+          cp test.log check.log out/ 2>/dev/null || true
+          # Paths under this machine's home, as test-card prints them, stay off the shared logs.
+          for f in out/test.log out/check.log; do [ -f "$f" ] && sed -i.bak -e "s#$HOME#~#g" "$f" && rm -f "$f.bak"; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ inputs.to }}
+          path: out/
+          if-no-files-found: ignore
+      - name: Clean up
+        if: always()
+        run: rm -rf card-kit out incoming test.log check.log
