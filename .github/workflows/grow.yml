@@ -332,8 +332,12 @@ jobs:
           pick=stages/grow-written/pick.json
           # The newest stage that holds each thing: the card that passed, its notes, the last logs.
           if [ "$TEST2" = pass ]; then passed=stages/grow-tested-2; elif [ "$TEST1" = pass ]; then passed=stages/grow-tested-1; else passed=; fi
-          last=$(ls -d stages/grow-tested-2 stages/grow-fixed stages/grow-tested-1 stages/grow-written 2>/dev/null | head -1 || true)
-          notes=$(ls stages/grow-tested-2/NEW-CARD.md stages/grow-fixed/NEW-CARD.md stages/grow-tested-1/NEW-CARD.md stages/grow-written/NEW-CARD.md 2>/dev/null | head -1 || true)
+          # In the order the stages ran, newest first (not ls, which sorts by name).
+          last=; notes=
+          for stage in grow-tested-2 grow-fixed grow-tested-1 grow-written; do
+            [ -z "$last" ] && [ -d "stages/$stage" ] && last=stages/$stage
+            [ -z "$notes" ] && [ -f "stages/$stage/NEW-CARD.md" ] && notes=stages/$stage/NEW-CARD.md
+          done
           category=$(jq -r '.category // "asked for by hand"' "$pick")
           if [ -n "$passed" ]; then
             rm -rf card-kit && git clone -q --depth 1 https://github.com/Edgible/card-kit.git card-kit
