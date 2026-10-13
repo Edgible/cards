@@ -1,20 +1,51 @@
 name: runner-check
 
-# Proves the self-hosted test runner can reach Docker and Edgible.
+# Proves a self-hosted fleet machine is ready: who it is, what it has, and that it reaches
+# Docker and Edgible. Run it by hand after a machine joins, choosing it with a label.
 # By hand only: a self-hosted runner never runs a pull request.
 on:
   workflow_dispatch:
+    inputs:
+      label:
+        description: One more label that picks the machine, such as "Linux" or "mem-16g"; empty for any fleet machine
+        type: string
+        default: ""
 
 permissions:
   contents: read
 
 jobs:
   runner:
-    runs-on: [self-hosted, edgible-test]
+    runs-on: ${{ inputs.label != '' && fromJSON(format('["self-hosted","edgible-test","{0}"]', inputs.label)) || fromJSON('["self-hosted","edgible-test"]') }}
+    env:
+      REPO_DEVICE: ${{ vars.TEST_DEVICE }}
     steps:
+      - name: machine
+        run: |
+          echo "runner: $RUNNER_NAME ($RUNNER_OS, $RUNNER_ARCH)"
+          if [ -n "${TEST_DEVICE:-}" ]; then echo "device: $TEST_DEVICE (from the runner's .env)"
+          else echo "device: ${REPO_DEVICE:-none} (from the repository variable)"; fi
+          if [ "$RUNNER_OS" = macOS ]; then
+            echo "memory: $(( $(sysctl -n hw.memsize) / 1073741824 )) GB, cpus: $(sysctl -n hw.ncpu)"
+          else
+            echo "memory: $(free -g | awk '/^Mem:/ {print $2}') GB, cpus: $(nproc)"
+          fi
+          echo "disk free: $(df -h "$GITHUB_WORKSPACE" | awk 'NR==2 {print $4}')"
+          command -v nvidia-smi >/dev/null && nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || echo "gpu: no NVIDIA GPU visible"
+          command -v claude >/dev/null && echo "claude: $(claude --version 2>/dev/null)" || echo "claude: not installed"
       - name: docker
         run: docker version --format 'docker {{.Server.Version}}'
       - name: edgible
         run: |
           edgible --version
-          edgible device list --json | python3 -c "import json,sys; print(len(json.load(sys.stdin)), 'devices visible')"
+          device=${TEST_DEVICE:-$REPO_DEVICE}
+          edgible device list --json | python3 -c "
+          import json, sys
+          devices = json.load(sys.stdin)
+          name = sys.argv[1]
+          print(len(devices), 'devices visible')
+          mine = [d for d in devices if d.get('name') == name]
+          if len(mine) != 1:
+              sys.exit(f'need exactly one device named {name}, found {len(mine)}')
+          print(f'{name}:', mine[0].get('status'))
+          " "$device"

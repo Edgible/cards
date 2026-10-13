@@ -79,12 +79,14 @@ jobs:
         env:
           FORCE: ${{ inputs.force }}
           ONLY: ${{ inputs.only }}
-          # The serving device the tests publish on, as `edgible device list` names it.
-          # A repository variable, so no device name is in this file.
-          DEVICE: ${{ vars.TEST_DEVICE }}
+          # The serving device the tests publish on, as `edgible device list` names it: the
+          # machine's own, from TEST_DEVICE in its runner's .env, so each machine in a fleet
+          # tests on itself; else the repository variable. No device name is in this file.
+          REPO_DEVICE: ${{ vars.TEST_DEVICE }}
         run: |
           set -euo pipefail
-          [ -n "$DEVICE" ] || { echo "set the repository variable TEST_DEVICE" >&2; exit 2; }
+          DEVICE=${TEST_DEVICE:-$REPO_DEVICE}
+          [ -n "$DEVICE" ] || { echo "set TEST_DEVICE in the runner's .env, or the repository variable TEST_DEVICE" >&2; exit 2; }
           # --spread 7: a new or changed card is tested tonight; every other test waits for the
           # card's turn in the week, so a night tests about a seventh of the cards.
           args=(--device "$DEVICE" --status ../status --by ci --spread 7)
