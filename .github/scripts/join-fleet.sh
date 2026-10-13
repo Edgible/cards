@@ -8,13 +8,21 @@
 #     | bash -s -- <registration-token> <edgible-device-name> <labels>
 #
 # The registration token comes from a maintainer and lasts an hour. Labels describe the
-# machine, such as fleet-wsl,mem-16g; leave out edgible-test until the regression routes by
-# label, so tonight's tests do not land here unannounced. No Claude token: fleet machines
-# only test. Nothing here opens an inbound port.
+# machine, such as fleet-vbox; the script adds a mem-<n>g label for each memory tier the
+# machine meets (mem-2g,mem-4g,mem-8g on a 9 GB one), which the regression matches against
+# each card's places:. Add edgible-test to take tonight's tests; leave it out to try the
+# machine first with runner-check. No Claude token: fleet machines only test. Nothing here
+# opens an inbound port.
 set -euo pipefail
 token=${1:?registration token}
 device=${2:?Edgible device name, as edgible device list prints it}
-labels=${3:?labels, such as fleet-wsl,mem-16g}
+labels=${3:?labels, such as fleet-vbox or fleet-vbox,edgible-test}
+# The memory tiers, as card-kit's test-cards.py names them; a little under the tier still
+# counts, since the kernel keeps some memory for itself.
+mem=$(awk '/^MemTotal:/ {print $2 * 1024}' /proc/meminfo)
+for t in 2 4 8 16 32 64; do
+  awk -v m="$mem" -v t="$t" 'BEGIN {exit !(m >= t * 0.9e9)}' && labels="$labels,mem-${t}g"
+done
 [ "$(id -u)" != 0 ] || { echo "run it as your normal user, not root" >&2; exit 2; }
 
 # A runner service needs systemd. On WSL2: add [boot] systemd=true to /etc/wsl.conf, run

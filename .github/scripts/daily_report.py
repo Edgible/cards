@@ -106,12 +106,14 @@ def main() -> int:
     body += ["## Cards regression", ""]
     if not reg:
         body.append("- Did not run in the last 24 hours.")
-        actions.append("The cards regression did not run last night: check that the runner's Mac was on and awake.")
+        actions.append("The cards regression did not run last night: check that the fleet machines were on and awake.")
     for r in reg:
         body.append(f"- [{r['event']} run]({r['url']}): {r['conclusion'] or r['status']}")
     if tested:
-        passed = sorted(k for k, v in tested.items() if v["result"] == "pass")
-        failed = sorted(k for k, v in tested.items() if v["result"] == "fail")
+        # Each card with the fleet machine that tested it, when the status records one.
+        on = lambda k: f"{k} ({tested[k]['device']})" if tested[k].get("device") else k
+        passed = sorted(on(k) for k, v in tested.items() if v["result"] == "pass")
+        failed = sorted(on(k) for k, v in tested.items() if v["result"] == "fail")
         body.append(f"- Tested: {len(tested)} card(s). Passed: {', '.join(passed) or 'none'}. "
                     f"Failed: {', '.join(failed) or 'none'}.")
     body.append(f"- Every card: {len(st) - len(failing)} of {len(st)} passing at their latest test"
