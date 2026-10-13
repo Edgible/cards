@@ -1,9 +1,9 @@
 # The catalog site: one page per card and per need, built by card-kit's card-site. See HOW-IT-WORKS.md.
 #
 # The build job writes a plain folder with relative links, which works at any address. Each
-# channel is its own deploy job that takes that same artifact: today GitHub Pages
-# (edgible.github.io/cards). A second channel, such as cards.edgible.com served through
-# Edgible, is one more job beside deploy-pages, and the build does not change.
+# channel is its own deploy job that takes that same artifact: deploy-pages for GitHub Pages
+# (edgible.github.io/cards), and deploy-branch for the site branch, which the static-site
+# card downloads to serve cards.edgible.com through Edgible.
 #
 # SITE_URL (a repository variable) is the canonical address, written into each page, the
 # sitemap, and llms.txt. Unset, it is the GitHub Pages address. When a second channel
@@ -72,3 +72,35 @@ jobs:
     steps:
       - id: deploy
         uses: actions/deploy-pages@v4
+
+  deploy-branch:
+    # The same build as the site branch: one commit, replaced only when the site changed.
+    # Any machine can download it as
+    # https://github.com/Edgible/cards/archive/refs/heads/site.tar.gz, which is what the
+    # static-site card serves.
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: artifact
+      - name: Push the build to the site branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir site && tar -xf artifact/artifact.tar -C site
+          cd site
+          git init -q -b site
+          git add -A
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q --depth 1 "$remote" site 2>/dev/null \
+             && [ "$(git rev-parse 'FETCH_HEAD^{tree}')" = "$(git write-tree)" ]; then
+            echo "the site has not changed"; exit 0
+          fi
+          git -c user.name="cards site" -c user.email="actions@github.com" \
+            commit -q -m "Site built from ${GITHUB_SHA::7}"
+          git push -q -f "$remote" site
