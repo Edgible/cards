@@ -45,9 +45,7 @@ Once you've used one card, you know how to use them all. Every README has the sa
 
 We also wanted cards to be checkable rather than "trust me". Before you start, `check-env.py` looks at your machine for anything the card would trip over, like a port that's already taken or an app with the same name, and prints the fixes as lines you can paste. After you publish, the Verify section checks that each hostname answers the way it should. And Tear down takes everything apart in the right order, backing up your data before it deletes anything.
 
-Because the steps are the same every time, they're easy to follow. That goes for you, and for an AI assistant if you're working with one.
-
-![With an AI agent: you describe a need and the agent suggests options from the cards. If a card fits, it deploys it on your machine. If not, it builds a new card with you, and you share it back so the next person finds it](about/ai-loop.svg)
+Because the steps are the same every time, they're easy to follow. That goes for you, and for an AI assistant if you're working with one: [Use cards with your AI](AI.md) shows how to set one up.
 
 ## Get involved
 
