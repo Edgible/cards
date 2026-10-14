@@ -1,0 +1,50 @@
+# Compose file for the rallly card.
+# The host port, ORG_LABEL and the secrets come from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+
+name: rallly
+
+services:
+  rallly:
+    image: lukevella/rallly:4.7.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${RALLLY_PORT:?set RALLLY_PORT in card.env}:3000"
+    environment:
+      DATABASE_URL: postgresql://rallly:${RALLLY_DB_PASSWORD:?set RALLLY_DB_PASSWORD in card.env}@rallly-db:5432/rallly
+      SECRET_PASSWORD: ${RALLLY_SECRET:?set RALLLY_SECRET in card.env}
+      NEXT_PUBLIC_BASE_URL: ${RALLLY_URL:-https://rallly.${ORG_LABEL:?set ORG_LABEL in card.env}.edgible.com}
+      ALLOWED_EMAILS: ${RALLLY_ALLOWED_EMAILS:?set RALLLY_ALLOWED_EMAILS in card.env}
+      SUPPORT_EMAIL: ${RALLLY_SMTP_FROM:-noreply@example.com}
+      SMTP_HOST: ${RALLLY_SMTP_HOST:-}
+      SMTP_PORT: ${RALLLY_SMTP_PORT:-587}
+      SMTP_SECURE: ${RALLLY_SMTP_SECURE:-false}
+      SMTP_USER: ${RALLLY_SMTP_USER:-}
+      SMTP_PWD: ${RALLLY_SMTP_PASSWORD:-}
+    depends_on:
+      rallly-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  rallly-db:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rallly
+      POSTGRES_USER: rallly
+      POSTGRES_PASSWORD: ${RALLLY_DB_PASSWORD:?set RALLLY_DB_PASSWORD in card.env}
+    volumes:
+      - rallly-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rallly -d rallly"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  rallly-db-data: {}

@@ -1,0 +1,23 @@
+tested: 2026-10-15
+result: pass
+card-kit: "b3a4fb1"
+edgible-cli: 1.4.6
+files: sha256:276505374874f4a6
+machine: darwin/arm64, docker 29.4.3
+images:
+  - lukevella/rallly:4.7.0@sha256:0a362dc5fd8977826fe78e69aaeee8e15879b81aab69813976e02e13584e5181
+  - postgres:17.11-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    rallly: pass
+  teardown: pass
+measured:
+  rallly:
+    memory: 554 MB
+    images: 420 MB
+    data: 51 MB
+duration: 5m
+by: agent
