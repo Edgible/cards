@@ -20,6 +20,17 @@ Take the website card. It's the site, an editor for its pages, analytics, and an
 
 A card never contains anything personal. No device names, hostnames, organization ids, or passwords. You fill those in yourself, on your own machine.
 
+## Shaped for sharing
+
+Almost everything about a card's form comes from one idea: it's meant to be passed on. Each choice is there so a setup that worked on one person's machine works on the next person's too.
+
+- **Nothing personal in it**, so you can publish it without a second thought. Your devices, hostnames and passwords stay in `card.env` on your machine.
+- **Places, not machines.** A card says "the forge" and "the runner", not "my Mac mini", so whoever runs it maps each place to a machine they have.
+- **The same shape every time**, so a stranger can follow it, and so can their AI assistant.
+- **Checks instead of trust.** `check-env` looks at a machine the author never saw, and Verify proves it worked there, so you don't have to take the author's word for it.
+- **Tested on a real machine**, so a card's badge tells you it still works today, not just when it was written.
+- **Plain files in git**, so a card can be read before it's run, forked, compared, reviewed in a pull request, and shared back as a variant.
+
 ## Why "cards" and not a catalog
 
 We thought about building a catalog of apps for a long time. The trouble is that a catalog is a promise: every app in it works, stays up to date, and is supported. Keeping that promise for every app out there would be a full-time job, and a fragile one.
