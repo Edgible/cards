@@ -46,7 +46,7 @@ You need Docker. To test a card, which every app card must be, you also need an 
    ../card-kit/run check-cards --fresh
    ```
 
-   `check-cards --fresh` fails a card whose files changed after its `test.yml`, so test again after any change. A picture is optional: `../card-kit/run card-image <name>`.
+   `check-cards --fresh` fails a card whose files changed after its `test.yml`, so test again after any change. A picture is optional: `../card-kit/run card-image <name>`. So is an icon, the app's own logo for the catalog site: `../card-kit/run card-icon <name>` fetches it from the open icon sets, and without one the site shows the Edgible symbol.
 
 5. **Check nothing private is left:** no device name, hostname, organization id, password, or your own domain, in any file.
 
