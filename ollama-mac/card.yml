@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: ollama-mac
+  description: Ollama on an Apple Silicon Mac, natively on its GPU, as an API behind a key
+  type: app
+
+applications:
+  - name: ollama
+    what: Ollama API, running models on the Mac's GPU
+    from: https://github.com/ollama/ollama/releases/tag/v0.40.4
+    port: 11434
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [api-key]
+    place: ollama
+
+places:
+  ollama:
+    native: macos
+    memory: 8 GB
+    disk: 2 GB
+    arch: [arm64]
