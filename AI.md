@@ -56,6 +56,28 @@ If it can't make a card pass, it offers to open an issue instead, with what it t
 
 It never shows your passwords in the chat. They stay in the card's `card.env` on your machine, and it tells you which line holds the one you need.
 
+## Connect with MCP
+
+The skill teaches an agent how to work with cards. The edgible-mcp server gives any [MCP](https://modelcontextprotocol.io) client a few tools that answer from the live catalog and your Edgible account. Today they only read, so they can't change anything:
+
+- **find** searches the cards for a need in your own words, with how well it suits Edgible and how to publish it.
+- **describe** shows one card: its apps, auth modes, minimum machine, and test status.
+- **whats_running** lists your devices and apps, and checks that each hostname answers the way its auth mode says.
+
+There are two ways to connect it:
+
+- **On your own computer**, over stdio, using that computer's `edgible` sign-in. See [card-kit's edgible-mcp](https://github.com/edgible-org/card-kit/tree/main/edgible-mcp#run-it).
+- **From anywhere**, with the [edgible-mcp](edgible-mcp) card. It runs the server on your machine behind an Edgible API key, one per person. Claude Code and other clients that can send a header work with it. Claude's desktop and web connectors expect their own sign-in, so they can't use it yet.
+
+The skill and the server work well together: the skill knows what to ask and how to set things up, and the tools give it fresh answers without a terminal.
+
+### What's coming
+
+- **A public finder.** find and describe with no sign-in, which you'll be able to add as a connector in Claude's and ChatGPT's apps.
+- **Tools that act.** A second release adds tools to deploy a card and to remove one, following the card's own steps and asking you first, as the skill does. They ship once they've passed on our test machines.
+- **More to check.** Backup and health status for each app in whats_running, as those features land.
+- **Measured on more agents.** We'll test the skill and these tools on other agents and models, not only Claude, and show the results here.
+
 ## Without a terminal
 
 In Claude's desktop or web app, the skill runs in a sandbox that can't reach your machine. It still helps you choose, and then gives you each command to run yourself, one step at a time, and reads what you paste back.
