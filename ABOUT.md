@@ -4,6 +4,8 @@ Say you want a website. You'll probably also want a decent CMS to edit it, some 
 
 We think there's a better default: run it yourself. Your data stays on a machine you own, and nothing sensitive has to leave the building. Open-source tools on your own hardware don't change their price or their terms on you. And honestly, it's a lot easier than it used to be.
 
+![The cards loop: get a setup working, write it down as a card, it is tested on a real machine, someone else runs it, makes it their own, and shares it back](about/loop.svg)
+
 ## Self-hosting doesn't have to be lonely
 
 Most self-hosting happens alone. Someone puts a few apps on a box in the garage, gets them talking to each other, puts them online, and it works. Nobody else ever sees how they did it, so the next person starts from scratch.
@@ -44,6 +46,8 @@ Once you've used one card, you know how to use them all. Every README has the sa
 We also wanted cards to be checkable rather than "trust me". Before you start, `check-env.py` looks at your machine for anything the card would trip over, like a port that's already taken or an app with the same name, and prints the fixes as lines you can paste. After you publish, the Verify section checks that each hostname answers the way it should. And Tear down takes everything apart in the right order, backing up your data before it deletes anything.
 
 Because the steps are the same every time, they're easy to follow. That goes for you, and for an AI assistant if you're working with one.
+
+![With an AI agent: you describe a need and the agent suggests options from the cards. If a card fits, it deploys it on your machine. If not, it builds a new card with you, and you share it back so the next person finds it](about/ai-loop.svg)
 
 ## Get involved
 
