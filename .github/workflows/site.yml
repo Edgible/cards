@@ -10,8 +10,9 @@
 # becomes the canonical one, change the variable; both copies then name it.
 #
 # It needs no secrets and runs on GitHub's own runners. It runs on every push to main, after
-# each regression (so the test results are fresh), daily for needs map changes in card-kit,
-# and by hand.
+# each regression (so the test results are fresh), when card-kit's site workflow starts it
+# after a change to card-site or the needs map, daily, and by hand. The repo's star count goes
+# on the site's Star button once it is high enough (card-site --stars).
 
 name: site
 
@@ -50,10 +51,13 @@ jobs:
           git fetch --depth 1 origin test-status
           git show FETCH_HEAD:status.json > _status.json
       - name: Build
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          stars=$(gh api "repos/${{ github.repository }}" --jq .stargazers_count || echo 0)
           .card-kit/run card-site --out _site --status _status.json \
             --base-url "${{ vars.SITE_URL || 'https://edgible-org.github.io/cards' }}" \
-            --commit "$(git rev-parse HEAD)"
+            --commit "$(git rev-parse HEAD)" --stars "$stars"
           # Files served as they are at the site's root, such as search engines' verification files.
           cp -R .site/. _site/
       - uses: actions/upload-pages-artifact@v3
