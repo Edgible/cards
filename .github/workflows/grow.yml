@@ -344,6 +344,10 @@ jobs:
             cp -R "$passed/$CARD" "cards/$CARD"
             cd cards
             (../card-kit/run card-image "$CARD" || true) >/dev/null 2>&1
+            # The app's own logo for the catalog site, from the open icon sets card-icon reads.
+            # None found is fine: the site shows the Edgible symbol, and the review says so.
+            icon=$(python3 ../card-kit/card-icon.py "$CARD" 2>&1) || true
+            echo "$icon"
             ../card-kit/run check-cards --fresh --untrusted "$CARD/card.yml"
             branch="agent/$CARD"
             git checkout -q -b "$branch"
@@ -376,6 +380,11 @@ jobs:
               echo "- [ ] The README says where the data lives, and Tear down backs it up before deleting it."
               echo "- [ ] The app is a sensible choice for its category, and its image is from its own project."
               echo "- [ ] Nothing names a device, a hostname, or an organization."
+              if [ -f "$CARD/images/icon.svg" ] || [ -f "$CARD/images/icon.png" ]; then
+                echo "- [ ] The icon is the app's own logo: ${icon#wrote }."
+              else
+                echo "- [ ] No icon was found under the name \`$CARD\`, so the site shows the Edgible symbol. If the app has a logo under another name: \`../card-kit/run card-icon $CARD --slug <name>\`."
+              fi
               echo "- [x] \`test.yml\` passes and \`check-cards --fresh --untrusted\` passes (checked by the workflow)."
               echo
               echo "After this is merged, the grow job adds \`$CARD\` to its category in card-kit's needs map. Made by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
