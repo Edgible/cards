@@ -6,7 +6,7 @@ With an AI agent, such as Claude Code, you don't need to know which app you want
 
 ## What you need
 
-- **An AI agent that runs commands on your machine.** Claude Code is what we test with. Other agents that read the open Agent Skills format can use the same skill.
+- **An AI agent that runs commands on your machine.** We test with Claude Code. The skill is in the open Agent Skills format, so other agents that read it should be able to use it too, but we haven't measured how well yet.
 - **Edgible on that machine:** the `edgible` CLI, logged in, with the machine added as a serving device. [Start here](https://guides.edgible.com/guides/start-here/index.html) if you haven't yet.
 - **Docker**, for most cards. A native card, such as [ollama-mac](ollama-mac), runs without it.
 
