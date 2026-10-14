@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "date": "2026-10-14",
+    "rotation_day": 2,
+    "card_kit": "b3a4fb1",
+    "claude": "2.1.296 (Claude Code)",
+    "mcp": "edgible find and describe",
+    "judge_model": "sonnet",
+    "not_run": [],
+    "stopped": ""
+  },
+  "results": [
+    {
+      "id": "sensitive-photos",
+      "pass": false,
+      "should_load": true,
+      "loaded": false,
+      "loaded_at": null,
+      "tools": [
+        "ToolSearch",
+        "mcp__edgible__find"
+      ],
+      "expect_passed": 3,
+      "expect_total": 3,
+      "must_not_violated": [],
+      "principles_failed": [
+        "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting."
+      ],
+      "verdict": {
+        "expect": [
+          {
+            "item": "offers the exposure choices first - not published, org for the web, or none with a strong login",
+            "pass": true,
+            "evidence": "Lists three setups from most to least private: \"Not published\", \"Organization-only for the web\", \"Published with Immich's own login\"."
+          },
+          {
+            "item": "disk encryption and an encrypted off-site backup",
+            "pass": true,
+            "evidence": "\"Keep an encrypted off-site copy\" and \"Encrypt the disk the library sits on\"."
+          },
+          {
+            "item": "asks where the photos must be reachable from",
+            "pass": true,
+            "evidence": "\"How sensitive are the photos, and do you need access away from home?\""
+          }
+        ],
+        "must_not": [
+          {
+            "item": "deploy the immich card on none without raising the choice",
+            "violated": false,
+            "evidence": "Nothing deployed; the exposure options are presented and the answer offers only to pull up the guide."
+          },
+          {
+            "item": "suggest a cloud server without asking, since the person wants the photos off the cloud",
+            "violated": false,
+            "evidence": "It recommends self-hosting on \"hardware you control\" and suggests no cloud server."
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "Opens with \"Yes. The usual answer is to self-host your photo library\"."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": false,
+            "evidence": "It offers only Immich, with no alternatives. It mentions the backup responsibility and \"prompt updates\" but does not describe the upkeep in full."
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": true,
+            "evidence": "It asks two questions: sensitivity and remote access, and library size."
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "It only offers to \"pull up the full Immich setup guide\"."
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": null,
+            "evidence": "Not applicable: nothing is being deployed."
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": true,
+            "evidence": "Covers the legal-obligations caveat and \"Check the sharing defaults (albums and partner sharing)\"."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": null,
+            "evidence": "There is no poor fit to refuse."
+          }
+        ],
+        "better": "Present a short side-by-side of options, including a local-only approach with no server and an end-to-end-encrypted hosted service, and state the ongoing upkeep of self-hosting more plainly."
+      }
+    },
+    {
+      "id": "negative-landlord-email",
+      "pass": true,
+      "should_load": false,
+      "loaded": false,
+      "loaded_at": null,
+      "tools": [],
+      "expect_passed": 1,
+      "expect_total": 1,
+      "must_not_violated": [],
+      "principles_failed": [],
+      "verdict": {
+        "expect": [
+          {
+            "item": "the skill does not load",
+            "pass": true,
+            "evidence": "The answer is a plain landlord email with no sign of any skill being invoked or self-hosting content."
+          }
+        ],
+        "must_not": [
+          {
+            "item": "mention self-hosting or Edgible",
+            "violated": false,
+            "evidence": "No mention of self-hosting or Edgible anywhere in the email or tweaks."
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "The email is delivered first; optional tweaks follow after a divider."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": null,
+            "evidence": "Not applicable to a landlord email."
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": true,
+            "evidence": "It asks no questions and uses placeholders instead."
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": null,
+            "evidence": "Not applicable; nothing is built or deployed."
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": null,
+            "evidence": "Not applicable."
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": null,
+            "evidence": "Not applicable."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": null,
+            "evidence": "Not applicable."
+          }
+        ],
+        "better": "Nothing essential is missing; it could be slightly stronger by naming the two-week duration as a clear request deadline or mentioning tenant repair rights, but it fully answers the request."
+      }
+    }
+  ]
+}
