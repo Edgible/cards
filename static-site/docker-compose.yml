@@ -33,6 +33,8 @@ services:
     depends_on:
       static-site-sync:
         condition: service_healthy
+    environment:
+      STATIC_SITE_FALLBACK: ${STATIC_SITE_FALLBACK:-}
     ports:
       - "127.0.0.1:${STATIC_SITE_PORT:?set STATIC_SITE_PORT in card.env}:8080"
     volumes:

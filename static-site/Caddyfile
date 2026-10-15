@@ -16,9 +16,20 @@
 	header @assets Cache-Control "public, max-age=604800"
 	header ?Cache-Control "public, max-age=300"
 
-	# The site's own 404.html, when it has one.
+	# A path that is no file or folder. With STATIC_SITE_FALLBACK set, such as /index.html
+	# for a single-page app, that page answers with 200, and the app routes the path itself.
+	# Otherwise the site's own 404.html answers, when it has one.
 	handle_errors 404 {
-		rewrite * /404.html
-		file_server
+		@fallback expression `{env.STATIC_SITE_FALLBACK} != ""`
+		handle @fallback {
+			rewrite * {env.STATIC_SITE_FALLBACK}
+			file_server {
+				status 200
+			}
+		}
+		handle {
+			rewrite * /404.html
+			file_server
+		}
 	}
 }
