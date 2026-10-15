@@ -1,9 +1,23 @@
 {
+  "canary": {
+    "result": "fail",
+    "tested": "2026-10-15",
+    "edgible-cli": "1.4.12",
+    "files": "sha256:3712b7817e12d025",
+    "device": "osxdevice"
+  },
   "ci": {
     "result": "pass",
     "tested": "2026-10-12",
     "edgible-cli": "1.4.6",
     "files": "sha256:34e3e0c39db9c001"
+  },
+  "edgible-mcp": {
+    "result": "fail",
+    "tested": "2026-10-15",
+    "edgible-cli": "1.4.12",
+    "files": "sha256:1335b044a30d31b0",
+    "device": "osxdevice"
   },
   "gitea": {
     "result": "fail",
@@ -62,12 +76,19 @@
     "files": "sha256:13d0cf578c27f1cb",
     "device": "macbookair"
   },
+  "rallly": {
+    "result": "fail",
+    "tested": "2026-10-15",
+    "edgible-cli": "1.4.12",
+    "files": "sha256:276505374874f4a6",
+    "device": "osxdevice"
+  },
   "static-site": {
-    "result": "pass",
-    "tested": "2026-10-14",
-    "edgible-cli": "1.4.6",
-    "files": "sha256:efb913a13b892936",
-    "device": "macbookair"
+    "result": "fail",
+    "tested": "2026-10-15",
+    "edgible-cli": "1.4.12",
+    "files": "sha256:3da8e0e52a0df4e9",
+    "device": "osxdevice"
   },
   "stirling-pdf": {
     "result": "pass",
