@@ -6,7 +6,7 @@ A static site, such as a project's docs, a catalog, or a small business's pages 
 
 ## What
 
-One app, `static-site`, on `none`, because a public site is for anyone. Two containers run it. `static-site-sync` downloads the site as a `.tar.gz` from `STATIC_SITE_SOURCE` every `STATIC_SITE_EVERY` seconds, and puts a new version live only when it downloaded in full, changed, has no paths that reach outside its folder, and has an `index.html` at its top. Going live is one rename, so a visitor never sees half a site, and anything wrong leaves the live site as it is. It runs as its image's own user, not root. `static-site` is Caddy on port `8080`, serving that copy read-only, with its admin API off and no certificate of its own: Edgible gives the site its hostname and HTTPS. A page the site does not have gets the site's own `404.html` when it has one. The source can be any URL that serves a `.tar.gz`: a branch archive from GitHub, GitLab, or your own Gitea, or a file on any web server. Build the site wherever you like, such as in CI, and publish the build to that branch or URL.
+One app, `static-site`, on `none`, because a public site is for anyone. Two containers run it. `static-site-sync` downloads the site as a `.tar.gz` from `STATIC_SITE_SOURCE` every `STATIC_SITE_EVERY` seconds, and puts a new version live only when it downloaded in full, changed, has no paths that reach outside its folder, and has an `index.html` at its top. Going live is one rename, so a visitor never sees half a site, and anything wrong leaves the live site as it is. It runs as its image's own user, not root. `static-site` is Caddy on port `8080`, serving that copy read-only, with its admin API off and no certificate of its own: Edgible gives the site its hostname and HTTPS. A page the site does not have gets the site's own `404.html` when it has one, or, for a single-page app with its own routes, the page `STATIC_SITE_FALLBACK` names, such as `/index.html`, with status 200. The source can be any URL that serves a `.tar.gz`: a branch archive from GitHub, GitLab, or your own Gitea, or a file on any web server. Build the site wherever you like, such as in CI, and publish the build to that branch or URL.
 
 The live version and the one before it live in the volume `static-site-www`. Nothing in it needs a backup: the source has the site. Minimum recommended for the place `static-site`: 256 MB of memory and 1.5 GB of disk, on an arm64, amd64 or 32-bit arm machine, with no GPU.
 
@@ -26,7 +26,7 @@ curl -fsSL https://github.com/edgible-org/cards/archive/refs/heads/main.tar.gz \
 
 ### 2. Edit card.env
 
-Set `DEVICE` to a name `edgible device list` prints, and `STATIC_SITE_SOURCE` to the URL of the site's `.tar.gz`. Keep `STATIC_SITE_STRIP=1` for a Git host's branch archive, which puts everything in one top folder, and set it to `0` for a tarball made from inside the site's folder. Change `STATIC_SITE_PORT` only if 8080 is taken.
+Set `DEVICE` to a name `edgible device list` prints, and `STATIC_SITE_SOURCE` to the URL of the site's `.tar.gz`. Keep `STATIC_SITE_STRIP=1` for a Git host's branch archive, which puts everything in one top folder, and set it to `0` for a tarball made from inside the site's folder. Set `STATIC_SITE_FALLBACK=/index.html` when the site is a single-page app with its own routes, such as a React app with React Router, so that opening one of its pages directly works. Change `STATIC_SITE_PORT` only if 8080 is taken.
 
 ```bash
 nano static-site/card.env
