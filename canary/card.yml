@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Card
+metadata:
+  name: canary
+  description: A smoke test for Edgible, one tiny container that answers on every auth mode
+  type: app
+
+applications:
+  - name: canary
+    what: whoami, open to anyone
+    from: traefik/whoami:v1.12.0
+    port: 8095
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [none]
+    place: canary
+
+  - name: canary-org
+    what: whoami behind an org login, same process as canary
+    from: traefik/whoami:v1.12.0
+    port: 8095
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [org]
+    place: canary
+
+  - name: canary-key
+    what: whoami behind an API key, same process as canary
+    from: traefik/whoami:v1.12.0
+    port: 8095
+    protocol: https
+    subtype: existing
+    published: true
+    authModes: [api-key]
+    place: canary
+
+places:
+  canary:
+    memory: 256 MB
+    disk: 1.5 GB
+    arch: [amd64, arm64, arm]
+    gpu: none

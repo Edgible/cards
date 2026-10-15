@@ -1,0 +1,27 @@
+tested: 2026-10-15
+result: pass
+card-kit: "49730a3"
+edgible-cli: 1.4.12
+files: sha256:3712b7817e12d025
+machine: darwin/arm64, docker 29.4.3
+images:
+  - traefik/whoami:v1.12.0@sha256:c4717a8d1f0134a7444e24f881160e033991f23027c6c5a9a3f8fd22e70d1d44
+steps:
+  check-env: pass
+  start: pass
+  publish: pass
+  verify:
+    canary: pass
+    canary-org: pass
+    canary-key: pass
+  checks:
+    answers-through-edgible: pass
+  teardown: pass
+measured:
+  canary:
+    memory: 8 MB
+    images: 5 MB
+    data: 1 KB
+duration: 4m
+by: agent
+notes: canary's port 8095 was taken on the test machine, so it was tested on 8096. canary-org's port 8095 was taken on the test machine, so it was tested on 8096. canary-key's port 8095 was taken on the test machine, so it was tested on 8096.
