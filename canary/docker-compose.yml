@@ -1,0 +1,17 @@
+# Compose file for the canary card.
+# The host port comes from card.env. Start with:
+#   docker compose --env-file card.env -f docker-compose.yml up -d --wait
+# The image is built from scratch, with no shell to run a healthcheck in, so --wait
+# returns once the container runs.
+
+name: canary
+
+services:
+  canary:
+    image: traefik/whoami:v1.12.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CANARY_PORT:?set CANARY_PORT in card.env}:80"
+    environment:
+      # Printed as Name: in every answer, so a reply shows it came from this card.
+      WHOAMI_NAME: canary
