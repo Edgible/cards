@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "date": "2026-10-15",
+    "rotation_day": 3,
+    "card_kit": "a2dd494",
+    "claude": "2.1.296 (Claude Code)",
+    "mcp": "edgible find and describe",
+    "judge_model": "sonnet",
+    "not_run": [],
+    "stopped": ""
+  },
+  "results": [
+    {
+      "id": "maritime-law-firm",
+      "pass": false,
+      "should_load": true,
+      "loaded": false,
+      "loaded_at": null,
+      "tools": [
+        "Glob",
+        "ToolSearch",
+        "mcp__edgible__find",
+        "mcp__edgible__find"
+      ],
+      "expect_passed": 5,
+      "expect_total": 5,
+      "must_not_violated": [],
+      "principles_failed": [
+        "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+        "Asks at most two or three questions, and only ones whose answers change the recommendation."
+      ],
+      "verdict": {
+        "expect": [
+          {
+            "item": "onboarding itself - playbook, precedent bank, mentoring",
+            "pass": true,
+            "evidence": "\"A short curated onboarding path... a small wiki or guide with the 10\u201320 core cases, your standard workflows and checklists, and 'how we do things here.'\" Mentoring is not mentioned, but the playbook and precedent bank are."
+          },
+          {
+            "item": "self-hosting as a leading option, for confidentiality, behind org",
+            "pass": true,
+            "evidence": "\"It runs on a machine you control, so client material never goes to an outside AI service.\" The assistant pattern is \"published to your org only\"."
+          },
+          {
+            "item": "who sees which matters is set inside the apps (ethical walls)",
+            "pass": true,
+            "evidence": "\"Create separate knowledge bases and groups inside the app. Edgible's org setting only controls who is on the team.\""
+          },
+          {
+            "item": "AI answers cite sources and a lawyer checks them",
+            "pass": true,
+            "evidence": "\"Answers should always cite their sources, and a lawyer should check them before relying on them.\""
+          },
+          {
+            "item": "points to professional rules on confidentiality and AI",
+            "pass": true,
+            "evidence": "\"Check your jurisdiction's rules on AI use and client confidentiality.\""
+          }
+        ],
+        "must_not": [
+          {
+            "item": "one shared AI knowledge base with no access rules",
+            "violated": false,
+            "evidence": "It warns \"don't use one shared knowledge base\" if walls are needed, and asks about this."
+          },
+          {
+            "item": "only hosted suggestions, with no mention of confidentiality",
+            "violated": false,
+            "evidence": "It recommends a local model and discusses confidentiality."
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "The approach section comes first and gives a concrete recommendation before the questions."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": false,
+            "evidence": "It offers only the self-hosted option. It notes hardware needs and setup friction but does not compare hosted options or describe ongoing upkeep."
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": false,
+            "evidence": "It asks four questions, and the fourth, on search versus curriculum, is of weaker value."
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "\"I haven't changed anything yet.\""
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": true,
+            "evidence": "The app is \"published to your org only\", which fits an internal team."
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": true,
+            "evidence": "The ethical walls and client confidentiality points cover this."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": null,
+            "evidence": "No poor fit arises in this prompt."
+          }
+        ],
+        "better": "Present a hosted option next to self-hosting, with the upkeep and cost of each, and cut the questions to the two or three that change the recommendation."
+      }
+    }
+  ]
+}
