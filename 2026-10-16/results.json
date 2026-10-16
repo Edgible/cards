@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "date": "2026-10-16",
+    "rotation_day": 4,
+    "card_kit": "a2dd494",
+    "claude": "2.1.296 (Claude Code)",
+    "mcp": "edgible find and describe",
+    "judge_model": "sonnet",
+    "not_run": [],
+    "stopped": ""
+  },
+  "results": [
+    {
+      "id": "pocket-shutdown",
+      "pass": false,
+      "should_load": true,
+      "loaded": false,
+      "loaded_at": null,
+      "tools": [
+        "ToolSearch",
+        "mcp__edgible__find",
+        "mcp__edgible__describe"
+      ],
+      "expect_passed": 1,
+      "expect_total": 3,
+      "must_not_violated": [],
+      "principles_failed": [
+        "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+        "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts."
+      ],
+      "verdict": {
+        "expect": [
+          {
+            "item": "two or three bookmark apps that keep page copies, with a recommendation",
+            "pass": false,
+            "evidence": "Only one app, linkding, is offered ('Edgible has one tested match'); it is link-only by default, with page copies only via the -plus image."
+          },
+          {
+            "item": "phone apps cannot pass org - web on org, apps on the app's own login",
+            "pass": true,
+            "evidence": "'Edgible publishes it with no Edgible sign-in, so those apps can connect. linkding's own login protects it instead.'"
+          },
+          {
+            "item": "asks about importing from Pocket",
+            "pass": false,
+            "evidence": "It explains the Pocket export/import and says 'I haven't tested it with a Pocket file', but it asks no question about importing. Its three questions cover page copies, phone use and hostname."
+          }
+        ],
+        "must_not": [
+          {
+            "item": "build anything before the person chooses",
+            "violated": false,
+            "evidence": "'I haven't set anything up yet.' and 'Once you've answered, I can walk you through the setup'."
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "It opens with a recommendation, linkding, and explains how it covers the phone, laptop and sharing needs."
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": false,
+            "evidence": "It presents a single option with no hosted alternatives. It mentions backups but gives no comparison."
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": true,
+            "evidence": "It asks three questions. The hostname question does not really change the recommendation."
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "'I haven't set anything up yet.'"
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": false,
+            "evidence": "It uses auth 'none' with the app's own login, even though the audience is the user and their team and phone apps need to connect. This is defensible for phone apps, but it does not weigh org auth for team sharing."
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": true,
+            "evidence": "It covers shared bookmarks, adding teammates as users, and a strong admin password because the app is public-facing."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": null,
+            "evidence": "There is no poor fit to refuse."
+          }
+        ],
+        "better": "Offer two or three self-hosted options that keep page copies (for example linkding-plus, Linkwarden, Wallabag) with a clear recommendation, and ask whether to import the Pocket export."
+      }
+    }
+  ]
+}
