@@ -34,9 +34,10 @@
   },
   "jellyfin": {
     "result": "pass",
-    "tested": "2026-10-12",
-    "edgible-cli": "1.4.6",
-    "files": "sha256:9668d4305692658c"
+    "tested": "2026-10-16",
+    "edgible-cli": "1.4.12",
+    "files": "sha256:9668d4305692658c",
+    "device": "osxdevice"
   },
   "linkding": {
     "result": "pass",
