@@ -41,9 +41,10 @@
   },
   "linkding": {
     "result": "pass",
-    "tested": "2026-10-11",
-    "edgible-cli": "1.4.6",
-    "files": "sha256:31889ddb32d6877a"
+    "tested": "2026-10-17",
+    "edgible-cli": "1.4.12",
+    "files": "sha256:31889ddb32d6877a",
+    "device": "osxdevice"
   },
   "mcp-bridge": {
     "result": "pass",
