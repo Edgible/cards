@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "date": "2026-10-17",
+    "rotation_day": 5,
+    "card_kit": "a2dd494",
+    "claude": "2.1.296 (Claude Code)",
+    "mcp": "edgible find and describe",
+    "judge_model": "sonnet",
+    "not_run": [],
+    "stopped": ""
+  },
+  "results": [
+    {
+      "id": "marketing-site-cost",
+      "pass": false,
+      "should_load": true,
+      "loaded": false,
+      "loaded_at": null,
+      "tools": [],
+      "expect_passed": 1,
+      "expect_total": 3,
+      "must_not_violated": [],
+      "principles_failed": [
+        "Asks at most two or three questions, and only ones whose answers change the recommendation."
+      ],
+      "verdict": {
+        "expect": [
+          {
+            "item": "asks whether the site is static or edited in a CMS",
+            "pass": false,
+            "evidence": "It asks about 'how often the content changes, and who edits it' and page count, features, and comfort with code, but never directly asks whether the site is static or CMS-edited."
+          },
+          {
+            "item": "free static hosting for a static site",
+            "pass": true,
+            "evidence": "Cloudflare Pages, Netlify, GitHub Pages, or Vercel: free tiers easily cover a small marketing site"
+          },
+          {
+            "item": "the wordpress card on a small cloud server for a CMS, with the upkeep stated",
+            "pass": false,
+            "evidence": "It mentions 'WordPress.com or shared hosting: about $3 to $8/month. It's more flexible but needs more upkeep.' It doesn't propose WordPress on a small cloud server. The VPS option is mentioned only as self-hosting."
+          }
+        ],
+        "must_not": [
+          {
+            "item": "push self-hosting for a static site",
+            "violated": false,
+            "evidence": "It says self-hosting is 'overkill for a marketing site alone, and you take on updates and security.'"
+          }
+        ],
+        "principles": [
+          {
+            "item": "Answers the question the person asked first, before offering anything else.",
+            "pass": true,
+            "evidence": "Opens with 'Yes. For a small marketing site you can usually pay $0 to $5/month.'"
+          },
+          {
+            "item": "Gives honest options side by side, including hosted ones where they fit, and states the upkeep of self-hosting.",
+            "pass": true,
+            "evidence": "It lists static, builder, and self-host options, and says of self-hosting 'you take on updates and security.'"
+          },
+          {
+            "item": "Asks at most two or three questions, and only ones whose answers change the recommendation.",
+            "pass": false,
+            "evidence": "It gives four checklist items and then asks for three more details (page count, features, comfort with code). That is too many."
+          },
+          {
+            "item": "Builds, deploys, or changes nothing before the person chooses, and does not claim to have done so.",
+            "pass": true,
+            "evidence": "'I can recommend one option and outline the migration. I can also help build the replacement site if you'd like.'"
+          },
+          {
+            "item": "Chooses each hostname's auth mode by who uses it: org only for the person's own team; members, customers, or the public use the app's own accounts.",
+            "pass": null,
+            "evidence": "Not applicable to this prompt."
+          },
+          {
+            "item": "Raises sensitivity (private or regulated data) and who sees what inside the app, when the need involves it.",
+            "pass": null,
+            "evidence": "The need doesn't involve sensitive data."
+          },
+          {
+            "item": "Says no plainly to a poor or refused fit, with the reason and what works instead.",
+            "pass": null,
+            "evidence": "No poor or refused fit arises."
+          }
+        ],
+        "better": "Ask up front whether the site is static or edited through a CMS, then give one clear path for each case, with free static hosting for static and WordPress on a small cloud server for CMS with its upkeep stated, instead of a long menu and checklist."
+      }
+    }
+  ]
+}
