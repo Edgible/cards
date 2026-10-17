@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>edgible-mcp: Read-only Edgible tools for Claude and other assistants, published with mcp-bridge | Edgible cards</title>
+<meta name="description" content="Read-only Edgible tools for Claude and other assistants, published with mcp-bridge">
+<link rel="canonical" href="https://cards.edgible.org/edgible-mcp/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Edgible cards">
+<meta property="og:title" content="edgible-mcp: Read-only Edgible tools for Claude and other assistants, published with mcp-bridge">
+<meta property="og:description" content="Read-only Edgible tools for Claude and other assistants, published with mcp-bridge">
+<meta property="og:url" content="https://cards.edgible.org/edgible-mcp/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" type="image/png" href="../assets/images/favicon.png">
+<link rel="stylesheet" href="../style.css?v=a2688184">
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a class="brand" href="../"><img src="../assets/images/edgible-logo-white.png" alt="Edgible" width="107" height="24"><span>Cards</span></a>
+<nav><a href="../about/">About</a><a href="../ai/">With AI</a><a href="../#app-cards">Apps</a><a href="../#pattern-cards">Patterns</a><a href="../needs/">Needs</a><a class="star" href="https://github.com/edgible-org/cards" title="Star edgible-org/cards on GitHub, so others find it">&#9733; Star on GitHub</a></nav>
+</div></header>
+<main class="wrap">
+<p class="crumbs"><a href="../">Cards</a> / edgible-mcp</p>
+<h1 class="with-icon"><span class="icon placeholder" style="width:56px;height:56px" aria-hidden="true"></span><span>edgible-mcp</span></h1>
+<p class="lead">Read-only Edgible tools for Claude and other assistants, published with mcp-bridge</p>
+<p class="meta"><span class="kind">App card</span><span class="pill fail" title="Latest lifecycle test on a real Edgible serving device">failed 2026-10-15, Edgible 1.4.12</span><a href="https://github.com/edgible-org/cards/tree/main/edgible-mcp">Source on GitHub</a></p>
+
+<h2>Apps</h2>
+<div class="scroll"><table><thead><tr><th>App</th><th>What</th><th>Who can reach it</th><th>Place</th></tr></thead><tbody><tr><td><code>edgible-mcp</code></td><td>Edgible MCP tools over Streamable HTTP</td><td>API key</td><td><code>edgible-mcp</code></td></tr></tbody></table></div>
+<h2>Machine</h2>
+<p>A place is one serving device. Minimum recommended for each:</p>
+<div class="scroll"><table><thead><tr><th>Place</th><th>Memory</th><th>Disk</th><th>Architecture</th><th>GPU</th></tr></thead><tbody><tr><td><code>edgible-mcp</code></td><td>384 MB</td><td>1.5 GB</td><td>amd64, arm64</td><td>none</td></tr></tbody></table></div>
+
+<article class="readme">
+<h2 id="why">Why</h2>
+<p>Edgible's <a href="https://github.com/edgible-org/cards">cards</a> are found, read, and checked from a terminal. This card puts them in front of Claude Code and other <a href="https://modelcontextprotocol.io">MCP</a> clients wherever you are: a read-only MCP server whose tools find a card for a need, app or pattern, describe one, and show what your organization runs and whether each app answers. It is built on the <a href="https://github.com/edgible-org/cards/tree/main/mcp-bridge">mcp-bridge</a> app card.</p>
+<h2 id="what">What</h2>
+<p>One app, <code>edgible-mcp</code>, on the place <code>edgible-mcp</code>, on <code>api-key</code>. It is the mcp-bridge app card with its own image, <code>ghcr.io/edgible-org/edgible-mcp</code>, built from <a href="https://github.com/edgible-org/card-kit/tree/main/edgible-mcp">card-kit's edgible-mcp</a>: <code>supercorp/supergateway:4.1.0-uvx</code> with the Edgible CLI 1.4.6 and the <code>edgible-mcp</code> stdio server added, a Node server on the official MCP TypeScript SDK with no HTTP or auth code of its own. <code>MCP_BRIDGE_COMMAND</code> runs it. Supergateway serves it over Streamable HTTP with <code>--stateful</code>, one server process per client session, and its healthcheck starts the server and pings it, so <code>healthy</code> means the server works. MCP clients send a key as <code>Authorization: Bearer</code>, and Edgible refuses a request without a valid one. Give each person their own key. Claude's desktop and web connectors expect the server's own OAuth instead, so this card is for Claude Code and other clients that can send a header.</p>
+<p>The tools only read. <code>find</code> searches the cards, each an app card (one app) or a pattern card (several apps wired together), and the <a href="https://github.com/edgible-org/card-kit/blob/main/skills/edgible-cards/needs-map.yaml">needs map</a> for a need in plain words. <code>describe</code> shows one card, with its type. These two read GitHub's public <code>main</code> and need no Edgible sign-in. <code>whats_running</code> lists your devices and apps, checks each hostname against its auth mode, and runs <code>edgible app doctor</code> for one app. It runs <code>edgible</code> read commands, so it needs the server's own Edgible sign-in, made after Start. Until then it says it is not signed in. The sign-in can do whatever its Edgible account can, although the tools only read, and anyone with a key sees your app names, hostnames, and devices.</p>
+<p>To use the same server on your own computer instead, over stdio with that computer's <code>edgible</code> sign-in, see <a href="https://github.com/edgible-org/card-kit/tree/main/edgible-mcp#run-it">card-kit's edgible-mcp</a>.</p>
+<p>The server's Edgible sign-in lives in the volume <code>edgible-mcp-login</code>, which is the CLI's HOME in the container and only root can read. It is never in this directory or in <code>card.env</code>. The catalog of cards is cached in <code>edgible-mcp-cache</code>, and <code>edgible-mcp-data</code> is the server's working directory, which it leaves empty. Minimum recommended for the place <code>edgible-mcp</code>: 384 MB of memory and 1.5 GB of disk, on an arm64 or amd64 machine, with no GPU.</p>
+<p>The Compose file is <a href="https://github.com/edgible-org/cards/blob/main/edgible-mcp/docker-compose.yml">docker-compose.yml</a>, the settings <a href="https://github.com/edgible-org/cards/blob/main/edgible-mcp/card.env">card.env</a>, the card <a href="https://github.com/edgible-org/cards/blob/main/edgible-mcp/card.yml">card.yml</a>.</p>
+<h2 id="how">How</h2>
+<p>Five steps. Edit <a href="https://github.com/edgible-org/cards/blob/main/edgible-mcp/card.env">card.env</a> before you start.</p>
+<h3 id="1-fetch">1. Fetch</h3>
+<pre><code class="language-bash">mkdir -p edgible-mcp
+curl -fsSL https://github.com/edgible-org/cards/archive/refs/heads/main.tar.gz \
+  | tar -xz --strip-components=2 -C edgible-mcp cards-main/edgible-mcp
+</code></pre>
+<h3 id="2-edit-cardenv">2. Edit card.env</h3>
+<p>Set <code>DEVICE</code> to a name <code>edgible device list</code> prints. Change <code>EDGIBLE_MCP_PORT</code> only if 8000 is taken. Leave <code>MCP_BRIDGE_COMMAND</code> as <code>edgible-mcp</code>.</p>
+<pre><code class="language-bash">nano edgible-mcp/card.env
+</code></pre>
+<h3 id="3-check">3. Check</h3>
+<pre><code class="language-bash">curl -fsSLo check-env.py https://raw.githubusercontent.com/edgible-org/card-kit/main/check-env.py
+python3 check-env.py edgible-mcp
+</code></pre>
+<p>It fills each empty secret and moves a taken port, as lines to paste. Run it again until it says <code>no conflicts</code>.</p>
+<h3 id="4-start">4. Start</h3>
+<pre><code class="language-bash">docker compose --env-file edgible-mcp/card.env -f edgible-mcp/docker-compose.yml up -d --wait
+docker compose --env-file edgible-mcp/card.env -f edgible-mcp/docker-compose.yml ps
+</code></pre>
+<p><code>--wait</code> returns when each service is running, and healthy when it has a healthcheck. Then sign the server in to Edgible, so <code>whats_running</code> can see your apps. It prints a link and a code: open the link, approve the code, and sign in with the Edgible account the server should read as. The sign-in is written to the volume <code>edgible-mcp-login</code>, and nothing prints it.</p>
+<pre><code class="language-bash">docker compose --env-file edgible-mcp/card.env -f edgible-mcp/docker-compose.yml exec edgible-mcp edgible auth login --no-browser
+</code></pre>
+<p><code>find</code> and <code>describe</code> work without it. To take the access away, run <code>edgible auth logout</code> the same way.</p>
+<h3 id="5-publish">5. Publish</h3>
+<pre><code class="language-bash">set -euo pipefail
+set -a
+. edgible-mcp/card.env
+set +a
+device_id=$(edgible device list --json | jq -er --arg name &quot;$DEVICE&quot; '
+  map(select(.name == $name))
+  | if length == 1 then .[0].id
+    else error(&quot;need exactly one device named &quot; + $name + &quot; (&quot; + (map(.status + &quot; &quot; + .id) | join(&quot;, &quot;)) + &quot;)&quot;)
+    end
+')
+edgible app create existing \
+  --non-interactive \
+  --name edgible-mcp \
+  --port &quot;$EDGIBLE_MCP_PORT&quot; \
+  --protocol https \
+  --auth-modes api-key \
+  --device-id &quot;$device_id&quot;
+edgible app list
+</code></pre>
+<h2 id="verify">Verify</h2>
+<p><code>edgible-mcp</code> uses <code>api-key</code>. Without a key, it answers <code>401</code>.</p>
+<pre><code class="language-bash">curl -sS -o /dev/null -w '%{http_code}\n' &quot;https://&lt;edgible-mcp hostname&gt;&quot;
+</code></pre>
+<p><code>401</code>, until a key is sent. Make a key for each person, which is shown once: <code>edgible app api-keys create --app edgible-mcp --name &lt;who&gt;</code>. Then add the server to Claude Code: <code>claude mcp add --transport http edgible https://&lt;edgible-mcp hostname&gt;/mcp --header "Authorization: Bearer &lt;key&gt;"</code>, and <code>/mcp</code> in Claude Code lists its three tools. <code>edgible app api-keys list --app edgible-mcp</code> and <code>delete</code> manage the keys.</p>
+<p>The rest of the setup is in the <a href="https://docs.claude.com/en/docs/claude-code/mcp">MCP in Claude Code docs</a>.</p>
+<h2 id="tear-down">Tear down</h2>
+<p>Four steps, in this order. Step 1 runs wherever <code>edgible</code> is logged in. Steps 2 to 4 run on the machine that runs the containers. Steps 2 and 3 read <code>card.env</code>, so keep it until step 4.</p>
+<h3 id="1-unpublish">1. Unpublish</h3>
+<pre><code class="language-bash">edgible app delete edgible-mcp --yes
+</code></pre>
+<h3 id="2-stop">2. Stop</h3>
+<pre><code class="language-bash">docker compose --env-file edgible-mcp/card.env -f edgible-mcp/docker-compose.yml down
+</code></pre>
+<h3 id="3-delete-the-data">3. Delete the data</h3>
+<p>Skip this step to keep the data. The loop copies each volume to a <code>.tgz</code> file in this directory first.</p>
+<pre><code class="language-bash">for volume in $(docker volume ls -q --filter label=com.docker.compose.project=edgible-mcp); do
+  docker run --rm -v &quot;$volume:/data:ro&quot; -v &quot;$PWD:/backup&quot; alpine tar -czf &quot;/backup/$volume.tgz&quot; -C /data .
+done
+docker compose --env-file edgible-mcp/card.env -f edgible-mcp/docker-compose.yml down --volumes
+</code></pre>
+<h3 id="4-remove-the-card">4. Remove the card</h3>
+<pre><code class="language-bash">rm -rf edgible-mcp
+</code></pre>
+</article>
+
+</main>
+<footer><div class="wrap">
+<p>Built 2026-10-17 from <a href="https://github.com/edgible-org/cards">edgible-org/cards</a> at <a href="https://github.com/edgible-org/cards/commit/18b803805ee674e2f1b2b175473963a38a126c3b">18b8038</a>. Cards are free to run and share under the repo's license. Test results come from the nightly regression, on a real Edgible serving device.</p>
+</div></footer>
+</body>
+</html>

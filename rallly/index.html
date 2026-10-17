@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rallly: Rallly date polls, open to anyone with the link and sign-in limited to the emails you list | Edgible cards</title>
+<meta name="description" content="Rallly date polls, open to anyone with the link and sign-in limited to the emails you list">
+<link rel="canonical" href="https://cards.edgible.org/rallly/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Edgible cards">
+<meta property="og:title" content="rallly: Rallly date polls, open to anyone with the link and sign-in limited to the emails you list">
+<meta property="og:description" content="Rallly date polls, open to anyone with the link and sign-in limited to the emails you list">
+<meta property="og:url" content="https://cards.edgible.org/rallly/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" type="image/png" href="../assets/images/favicon.png">
+<link rel="stylesheet" href="../style.css?v=a2688184">
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a class="brand" href="../"><img src="../assets/images/edgible-logo-white.png" alt="Edgible" width="107" height="24"><span>Cards</span></a>
+<nav><a href="../about/">About</a><a href="../ai/">With AI</a><a href="../#app-cards">Apps</a><a href="../#pattern-cards">Patterns</a><a href="../needs/">Needs</a><a class="star" href="https://github.com/edgible-org/cards" title="Star edgible-org/cards on GitHub, so others find it">&#9733; Star on GitHub</a></nav>
+</div></header>
+<main class="wrap">
+<p class="crumbs"><a href="../">Cards</a> / rallly</p>
+<h1 class="with-icon"><img class="icon" src="../rallly/icon.svg" alt="" width="56" height="56" loading="lazy"><span>rallly</span></h1>
+<p class="lead">Rallly date polls, open to anyone with the link and sign-in limited to the emails you list</p>
+<p class="meta"><span class="kind">App card</span><span class="pill fail" title="Latest lifecycle test on a real Edgible serving device">failed 2026-10-15, Edgible 1.4.12</span><a href="https://github.com/edgible-org/cards/tree/main/rallly">Source on GitHub</a></p>
+
+<h2>Apps</h2>
+<div class="scroll"><table><thead><tr><th>App</th><th>What</th><th>Who can reach it</th><th>Place</th></tr></thead><tbody><tr><td><code>rallly</code></td><td>Rallly poll site, for voters and for the organizers who sign in</td><td>open to anyone</td><td><code>rallly</code></td></tr></tbody></table></div>
+<h2>Machine</h2>
+<p>A place is one serving device. Minimum recommended for each:</p>
+<div class="scroll"><table><thead><tr><th>Place</th><th>Memory</th><th>Disk</th><th>Architecture</th><th>GPU</th></tr></thead><tbody><tr><td><code>rallly</code></td><td>512 MB</td><td>2 GB</td><td>amd64, arm64</td><td>none</td></tr></tbody></table></div>
+
+<article class="readme">
+<h2 id="why">Why</h2>
+<p>Arranging a time that suits everyone usually means a Doodle poll, with its ads and its paywall for the features a club needs. <a href="https://rallly.co">Rallly</a> does the same job: you propose dates and times, share a link, and everyone votes, with no account. The polls and the votes stay on a machine you own.</p>
+<h2 id="what">What</h2>
+<p>One app, <code>rallly</code>, on <code>none</code>, with Postgres beside it as <code>rallly-db</code>. The people who vote are members, players and customers, who are not in your Edgible organization, so <code>org</code> would lock them out. A voter needs only the poll's link. The organizers who create polls sign in with the app's own login, a code emailed to them, and <code>RALLLY_ALLOWED_EMAILS</code> limits that to the addresses you list, so nobody else can register. That login needs a mail server: set the <code>RALLLY_SMTP_</code> lines. Anyone holding a poll's link can see its votes and names, so share links only with the people it is for.</p>
+<p>Polls, votes and accounts live in the volume <code>rallly-db-data</code>. Minimum recommended for the place <code>rallly</code>: 512 MB of memory and 2 GB of disk, on an arm64 or amd64 machine, with no GPU.</p>
+<p>The Compose file is <a href="https://github.com/edgible-org/cards/blob/main/rallly/docker-compose.yml">docker-compose.yml</a>, the settings <a href="https://github.com/edgible-org/cards/blob/main/rallly/card.env">card.env</a>, the card <a href="https://github.com/edgible-org/cards/blob/main/rallly/card.yml">card.yml</a>.</p>
+<h2 id="how">How</h2>
+<p>Five steps. Edit <a href="https://github.com/edgible-org/cards/blob/main/rallly/card.env">card.env</a> before you start.</p>
+<h3 id="1-fetch">1. Fetch</h3>
+<pre><code class="language-bash">mkdir -p rallly
+curl -fsSL https://github.com/Edgible/cards/archive/refs/heads/main.tar.gz \
+  | tar -xz --strip-components=2 -C rallly cards-main/rallly
+</code></pre>
+<h3 id="2-edit-cardenv">2. Edit card.env</h3>
+<p>Set <code>DEVICE</code> to a name <code>edgible device list</code> prints, <code>ORG_LABEL</code> to the label in your hostnames, <code>RALLLY_ALLOWED_EMAILS</code> to the organizers' addresses, and the <code>RALLLY_SMTP_</code> lines to a mail server. The three secrets are generated in the next step.</p>
+<pre><code class="language-bash">nano rallly/card.env
+</code></pre>
+<h3 id="3-check">3. Check</h3>
+<pre><code class="language-bash">curl -fsSLo check-env.py https://raw.githubusercontent.com/edgible-org/card-kit/main/check-env.py
+python3 check-env.py rallly
+</code></pre>
+<p>It fills each empty secret and moves a taken port, as lines to paste. Run it again until it says <code>no conflicts</code>.</p>
+<h3 id="4-start">4. Start</h3>
+<pre><code class="language-bash">docker compose --env-file rallly/card.env -f rallly/docker-compose.yml up -d --wait
+docker compose --env-file rallly/card.env -f rallly/docker-compose.yml ps
+</code></pre>
+<p><code>--wait</code> returns when each service is running, and healthy when it has a healthcheck. Rallly has no setup page and no default account, so nothing needs preparing before Publish.</p>
+<h3 id="5-publish">5. Publish</h3>
+<pre><code class="language-bash">set -euo pipefail
+set -a
+. rallly/card.env
+set +a
+device_id=$(edgible device list --json | jq -er --arg name &quot;$DEVICE&quot; '
+  map(select(.name == $name))
+  | if length == 1 then .[0].id
+    else error(&quot;need exactly one device named &quot; + $name + &quot; (&quot; + (map(.status + &quot; &quot; + .id) | join(&quot;, &quot;)) + &quot;)&quot;)
+    end
+')
+edgible app create existing \
+  --non-interactive \
+  --name rallly \
+  --port &quot;$RALLLY_PORT&quot; \
+  --protocol https \
+  --auth-modes none \
+  --device-id &quot;$device_id&quot;
+edgible app list
+</code></pre>
+<h2 id="verify">Verify</h2>
+<p><code>rallly</code> uses <code>none</code>.</p>
+<pre><code class="language-bash">curl -sS -o /dev/null -w '%{http_code}\n' &quot;https://&lt;rallly hostname&gt;&quot;
+</code></pre>
+<p>Open the hostname, enter an address from <code>RALLLY_ALLOWED_EMAILS</code>, and enter the code Rallly emails you. Create a poll, open its link in a private window, and vote with no account. An address that is not on the list is refused.</p>
+<p>The rest of the setup is in the <a href="https://support.rallly.co/self-hosting">Rallly docs</a>.</p>
+<h2 id="tear-down">Tear down</h2>
+<p>Four steps, in this order. Step 1 runs wherever <code>edgible</code> is logged in. Steps 2 to 4 run on the machine that runs the containers. Steps 2 and 3 read <code>card.env</code>, so keep it until step 4.</p>
+<h3 id="1-unpublish">1. Unpublish</h3>
+<pre><code class="language-bash">edgible app delete rallly --yes
+</code></pre>
+<h3 id="2-stop">2. Stop</h3>
+<pre><code class="language-bash">docker compose --env-file rallly/card.env -f rallly/docker-compose.yml down
+</code></pre>
+<h3 id="3-delete-the-data">3. Delete the data</h3>
+<p>Skip this step to keep the data. The loop copies each volume to a <code>.tgz</code> file in this directory first.</p>
+<pre><code class="language-bash">for volume in $(docker volume ls -q --filter label=com.docker.compose.project=rallly); do
+  docker run --rm -v &quot;$volume:/data:ro&quot; -v &quot;$PWD:/backup&quot; alpine tar -czf &quot;/backup/$volume.tgz&quot; -C /data .
+done
+docker compose --env-file rallly/card.env -f rallly/docker-compose.yml down --volumes
+</code></pre>
+<h3 id="4-remove-the-card">4. Remove the card</h3>
+<pre><code class="language-bash">rm -rf rallly
+</code></pre>
+</article>
+
+</main>
+<footer><div class="wrap">
+<p>Built 2026-10-17 from <a href="https://github.com/edgible-org/cards">edgible-org/cards</a> at <a href="https://github.com/edgible-org/cards/commit/18b803805ee674e2f1b2b175473963a38a126c3b">18b8038</a>. Cards are free to run and share under the repo's license. Test results come from the nightly regression, on a real Edgible serving device.</p>
+</div></footer>
+</body>
+</html>
